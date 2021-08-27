@@ -8,13 +8,13 @@ class Enemy(object):
     _weapon = None
 
     #--------------------Métodos--------------------
-    def __init__(self, window, keyboard, mouse):
+    def __init__(self,sprite, window, keyboard, mouse):
         self._window = window
         self._keyboard = keyboard
         self._mouse = mouse
         self._vel = 200
         self.life = 3
-        self._sprite = Sprite("assets/enemies/orc_boss_idle_sheet.png", 4)
+        self._sprite = Sprite(sprite, 4)
 
     """Define a posição x,y do inimigo"""
     def set_position(self, x, y):
