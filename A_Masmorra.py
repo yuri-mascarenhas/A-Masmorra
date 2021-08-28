@@ -58,16 +58,17 @@ while(not keyboard.key_pressed("ESC")):
     # Update dos Game Objects
     if(keyboard.key_pressed("W")):
         if(player.can_move(map.get_layer(0), map.get_grid_size(),"u")):
-            player.move("u")
+            player.move("u", map.get_grid_size())
     if(keyboard.key_pressed("A")):
         if(player.can_move(map.get_layer(0), map.get_grid_size(),"l")):
-            player.move("l")
+            player.move("l", map.get_grid_size())
     if(keyboard.key_pressed("S")):
         if(player.can_move(map.get_layer(0), map.get_grid_size(),"d")):
-            player.move("d")
+            player.move("d", map.get_grid_size())
     if(keyboard.key_pressed("D")):
         if(player.can_move(map.get_layer(0), map.get_grid_size(),"r")):
-            player.move("r")
+            player.move("r", map.get_grid_size())
+    player.decrease_move_delay(window.delta_time())
         
 
     # Draw dos Game Objects
