@@ -46,13 +46,14 @@ tiles = wall_tileset = Tileset([
     Tile("resources/tiles/wall/wall_top_right.png", 1, 2)
     ])
 
-
 bg = Sprite("assets/bg.png")
 map = Map(800, 600, 48, 48, tiles, 3)
-player = Player(window, keyboard, mouse)
+player = Player()
+player.set_initial_position(map.get_layer(0), map.get_grid_size())
 enemy = Enemy("assets/enemies/orc_boss_idle_sheet.png", window, keyboard, mouse)
 
-player.set_position(400,300)
+
+
 #-------------------------Game Loop-------------------------
 while(not keyboard.key_pressed("ESC")):
     # Update dos Game Objects
@@ -74,6 +75,6 @@ while(not keyboard.key_pressed("ESC")):
     # Draw dos Game Objects
     bg.draw()
     map.draw_layer(0)
-    player.draw()
     map.draw_layer(2)
+    player.draw()
     window.update()
