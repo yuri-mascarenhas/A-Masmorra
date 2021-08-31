@@ -69,9 +69,10 @@ while(not keyboard.key_pressed("ESC")):
     if(keyboard.key_pressed("D")):
         if(player.can_move(map.get_layer(0), map.get_grid_size(),"r")):
             player.move("r", map.get_grid_size())
-    player.decrease_move_delay(window.delta_time())
-        
 
+    player.decrease_move_delay(window.delta_time())
+    player.move_animation(window.delta_time())
+    print([player.get_sprite().x, player.get_sprite().y])
     # Draw dos Game Objects
     bg.draw()
     map.draw_layer(0)
