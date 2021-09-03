@@ -33,6 +33,7 @@ class Player(object):
             self._sprite[i].x = x
             self._sprite[i].y = y
 
+    """Define a posição inicial do Player"""
     def set_initial_position(self, map: list[list[Tile]], tile_size):
         setted = False
         lin = 0
@@ -49,6 +50,10 @@ class Player(object):
     """Retorna o sprite atual"""
     def get_sprite(self):
         return self._sprite[self._state]
+
+    """Retorna a posição do player na matriz-mapa"""
+    def get_grid_position(self):
+        return self._grid_position
 
     """Diminui o tempo de delay do movimento"""
     def decrease_move_delay(self, time: int):
@@ -73,7 +78,7 @@ class Player(object):
         self._move_delay = self._delay
     
     """Define se o player pode se mover na direção especificada"""
-    def can_move(self, map: list[list[Tile]], tile_size: int, dir: str):
+    def can_move(self, map: list[list[Tile]], dir: str):
         if(self._move_delay > 0):
             return False
         else:
@@ -127,7 +132,6 @@ class Player(object):
                 if(self._sprite[self._state].y < self._destiny):
                     self._sprite[self._state].move_y(self._vel * delta_time)
                 else:
-                    #self._sprite[self._state].y = self._destiny
                     for i in self._sprite:
                         self._sprite[i].y = self._destiny
                     self._state = "idle"

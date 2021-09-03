@@ -50,32 +50,38 @@ bg = Sprite("assets/bg.png")
 map = Map(800, 600, 48, 48, tiles, 3)
 player = Player()
 player.set_initial_position(map.get_layer(0), map.get_grid_size())
-enemy = Enemy("assets/enemies/orc_boss_idle_sheet.png", window, keyboard, mouse)
+enemy = Enemy("goblin", 1, 3)
+enemy.set_initial_position(map.get_layer(0), map.get_grid_size(), player)
 
 
 
 #-------------------------Game Loop-------------------------
 while(not keyboard.key_pressed("ESC")):
-    # Update dos Game Objects
+    # Update do Player
     if(keyboard.key_pressed("W")):
-        if(player.can_move(map.get_layer(0), map.get_grid_size(),"u")):
+        if(player.can_move(map.get_layer(0),"u")):
             player.move("u", map.get_grid_size())
     if(keyboard.key_pressed("A")):
-        if(player.can_move(map.get_layer(0), map.get_grid_size(),"l")):
+        if(player.can_move(map.get_layer(0), "l")):
             player.move("l", map.get_grid_size())
     if(keyboard.key_pressed("S")):
-        if(player.can_move(map.get_layer(0), map.get_grid_size(),"d")):
+        if(player.can_move(map.get_layer(0), "d")):
             player.move("d", map.get_grid_size())
     if(keyboard.key_pressed("D")):
-        if(player.can_move(map.get_layer(0), map.get_grid_size(),"r")):
+        if(player.can_move(map.get_layer(0), "r")):
             player.move("r", map.get_grid_size())
-
     player.decrease_move_delay(window.delta_time())
     player.move_animation(window.delta_time())
-    print([player.get_sprite().x, player.get_sprite().y])
+    
+    # Update dos inimigos
+    enemy.move(map.get_layer(0), map.get_grid_size(), player)
+    enemy.move_animation(window.delta_time())
+    enemy.decrease_move_delay(window.delta_time())
+
     # Draw dos Game Objects
     bg.draw()
     map.draw_layer(0)
     map.draw_layer(2)
+    enemy.draw()
     player.draw()
     window.update()
