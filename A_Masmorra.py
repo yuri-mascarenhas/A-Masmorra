@@ -53,30 +53,37 @@ player.set_initial_position(map.get_layer(0), map.get_grid_size())
 enemy = Enemy("goblin", 1, 3)
 enemy.set_initial_position(map.get_layer(0), map.get_grid_size(), player)
 
+#---------------------Funções Auxiliares---------------------
+def move(key: str):
+    if(player.can_move(map.get_layer(0), key)):
+        player.move(key, map.get_grid_size())
 
+def decrease_delays():
+    player.decrease_move_delay(window.delta_time())
+    enemy.decrease_move_delay(window.delta_time())
+
+def animations():
+    player.move_animation(window.delta_time())
+    enemy.move_animation(window.delta_time())
 
 #-------------------------Game Loop-------------------------
 while(not keyboard.key_pressed("ESC")):
     # Update do Player
     if(keyboard.key_pressed("W")):
-        if(player.can_move(map.get_layer(0),"u")):
-            player.move("u", map.get_grid_size())
+        move("u")
     if(keyboard.key_pressed("A")):
-        if(player.can_move(map.get_layer(0), "l")):
-            player.move("l", map.get_grid_size())
+        move("l")
     if(keyboard.key_pressed("S")):
-        if(player.can_move(map.get_layer(0), "d")):
-            player.move("d", map.get_grid_size())
+        move("d")
     if(keyboard.key_pressed("D")):
-        if(player.can_move(map.get_layer(0), "r")):
-            player.move("r", map.get_grid_size())
-    player.decrease_move_delay(window.delta_time())
-    player.move_animation(window.delta_time())
+        move("r")
     
     # Update dos inimigos
     enemy.move(map.get_layer(0), map.get_grid_size(), player)
-    enemy.move_animation(window.delta_time())
-    enemy.decrease_move_delay(window.delta_time())
+
+    # Updates Unificados
+    decrease_delays()
+    animations()
 
     # Draw dos Game Objects
     bg.draw()
