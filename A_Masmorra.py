@@ -5,6 +5,7 @@ from tile import *
 from Map import *
 from Player import *
 from Enemy import *
+import random
 
 window = Window(800, 600)
 keyboard = Window.get_keyboard()
@@ -50,7 +51,7 @@ bg = Sprite("assets/bg.png")
 map = Map(800, 600, 48, 48, tiles, 3)
 player = Player()
 player.set_initial_position(map.get_layer(0), map.get_grid_size())
-enemy = Enemy("goblin", 1, 3)
+enemy = Enemy("goblin", 1, 50)
 enemy.set_initial_position(map.get_layer(0), map.get_grid_size(), player)
 
 #---------------------Funções Auxiliares---------------------
@@ -59,13 +60,17 @@ def move(key: str):
         player.move(key, map.get_grid_size())
 
 def decrease_delays():
-    player.decrease_move_delay(window.delta_time())
-    enemy.decrease_move_delay(window.delta_time())
+    player.decrease_all_delay(window.delta_time())
+    enemy.decrease_all_delay(window.delta_time())
 
 def animations():
     player.move_animation(window.delta_time())
+    player.attack_animation(window.delta_time())
     enemy.move_animation(window.delta_time())
 
+def damage_control():
+    if(player._weapon.collided(enemy.get_sprite()) and player.is_attacking()):
+        enemy.get_damage(player.get_str() + 5*(random.randint(0,1)))
 #-------------------------Game Loop-------------------------
 while(not keyboard.key_pressed("ESC")):
     # Update do Player
@@ -78,17 +83,22 @@ while(not keyboard.key_pressed("ESC")):
     if(keyboard.key_pressed("D")):
         move("r")
     
+    if(mouse.is_button_pressed(1)):
+        player.attack()
+
     # Update dos inimigos
     enemy.move(map.get_layer(0), map.get_grid_size(), player)
 
     # Updates Unificados
     decrease_delays()
     animations()
+    damage_control()
 
     # Draw dos Game Objects
     bg.draw()
     map.draw_layer(0)
     map.draw_layer(2)
-    enemy.draw()
+    if(enemy._life > 0):
+        enemy.draw(window)
     player.draw()
     window.update()

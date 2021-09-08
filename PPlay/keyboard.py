@@ -22,7 +22,7 @@ class Keyboard():
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.KEYDOWN:
-                print(event.key)
+                return event.key
                 
     def to_pattern(self, key):
         if((key=="LEFT") or (key=="left")):

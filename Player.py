@@ -5,27 +5,34 @@ class Player(object):
     #--------------------Atributos--------------------
     _vel: int
     _life: int
+    _str: int
     _state: str
     _sprite: dict[Sprite]
     _weapon: Sprite
     _destiny: int
     _move_direction: str
-    _move_delay: float              # contador para o delay do movimento
-    _delay: float                   # define o valor do delay de movimento
+    _attack_delay: float                   # contador para o delay do ataque
+    _move_delay: float                     # contador para o delay do movimento
+    _delays: dict[float]                   # define o valor dos delays
     _grid_position: list[int]
 
     #--------------------Métodos--------------------
     def __init__(self):
         self._vel = 100
-        self._life = 3
+        self._life = 100
+        self._str = 15
         self._state = "idle"
         self._sprite = {"idle": Sprite("resources/player/knight_idle_right.png", 4),
                         "moving": Sprite("resources/player/knight_run.png", 4)}
+        self._weapon = Sprite("resources/player/sword_right.png")
         for i in self._sprite:
             self._sprite[i].set_total_duration(500)
         self._move_delay = 0
-        self._delay = 0.5
+        self._attack_delay = 0
+        self._delays = {"move": 0.5,
+                        "attack": 0.5}
         self._grid_position = [0, 0]
+
 
     """Define a posição x,y do player"""
     def set_position(self, x: int, y: int):
@@ -50,14 +57,18 @@ class Player(object):
     """Retorna o sprite atual"""
     def get_sprite(self):
         return self._sprite[self._state]
+    
+    def get_str(self):
+        return self._str
 
     """Retorna a posição do player na matriz-mapa"""
     def get_grid_position(self):
         return self._grid_position
 
     """Diminui o tempo de delay do movimento"""
-    def decrease_move_delay(self, time: int):
+    def decrease_all_delay(self, time: int):
         self._move_delay -= time
+        self._attack_delay -= time
 
     """Define o movimento do player"""
     def move(self, dir: str, tile_size: int):
@@ -75,7 +86,7 @@ class Player(object):
             self._grid_position[1] += 1
         self._state = "moving"
         self._move_direction = dir
-        self._move_delay = self._delay
+        self._move_delay = self._delays["move"]
     
     """Define se o player pode se mover na direção especificada"""
     def can_move(self, map: list[list[Tile]], dir: str):
@@ -111,6 +122,13 @@ class Player(object):
                 else:
                     return True
 
+    """Controla o ataque do jogador"""
+    def attack(self):
+        if(self._attack_delay <= 0):
+            self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2)
+            self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + self._weapon.height
+            self._attack_delay = self._delays["attack"]
+
     """Faz a animação com movimento do jogador"""
     def move_animation(self, delta_time):
         if(self._state == "moving"):
@@ -128,14 +146,14 @@ class Player(object):
                     for i in self._sprite:
                         self._sprite[i].x = self._destiny
                     self._state = "idle"
-            if(self._move_direction == "d"):
+            elif(self._move_direction == "d"):
                 if(self._sprite[self._state].y < self._destiny):
                     self._sprite[self._state].move_y(self._vel * delta_time)
                 else:
                     for i in self._sprite:
                         self._sprite[i].y = self._destiny
                     self._state = "idle"
-            if(self._move_direction == "r"):
+            elif(self._move_direction == "r"):
                 if(self._sprite[self._state].x < self._destiny):
                     self._sprite[self._state].move_x(self._vel * delta_time)
                 else:
@@ -143,9 +161,28 @@ class Player(object):
                         self._sprite[i].x = self._destiny
                     self._state = "idle"
 
-    """Desenha o sprite do jogador"""
+    """Faz a animação de ataque do jogador"""
+    def attack_animation(self, delta_time):
+        if(self._attack_delay > 0):
+            if(self._attack_delay > (self._delays["attack"]/2)):
+                self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) + (30 * self._attack_delay)
+                self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + self._weapon.height
+            else:
+                self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (30 * (self._delays["attack"] - self._attack_delay))
+                self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + self._weapon.height
+
+    """Retorna True se o player tiver"""
+    def is_attacking(self):
+        if(self._attack_delay > 0):
+            return True
+        else:
+            return False
+
+    """Desenha o sprite do jogador e sua arma"""
     def draw(self):
         self._sprite[self._state].update()
         self._sprite[self._state].draw()
+        if(self._attack_delay > 0):
+            self._weapon.draw()
 
     
