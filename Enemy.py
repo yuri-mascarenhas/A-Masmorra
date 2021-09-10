@@ -6,7 +6,7 @@ import random
 class Enemy(object):
     #--------------------Atributos--------------------
     _vel: int
-    _life: int
+    _life: float
     _max_life: int
     _type: str
     _size: int
@@ -30,12 +30,25 @@ class Enemy(object):
                         "moving": Sprite("resources/enemies/goblin/goblin_run_anim_f3.png")}
         self._damage_delay = 0
         self._move_delay = 0
-        self._delays = {"move": 2, "damage": 1}
+        self._delays = {"move": 2, 
+                        "damage": 1}
+
+    """Retorna a vida atual do inimigo"""
+    def get_life(self):
+        return self._life
+
+    """Retorna a vida máxima do inimigo"""
+    def get_max_life(self):
+        return self._max_life
 
     """Retorna o sprite do estado atual"""
     def get_sprite(self):
         return self._sprite[self._state]
     
+    """Retorna o tamanho/tipo do inimigo"""
+    def get_size(self):
+        return self._size
+
     """Diminui a vida do inimigo"""
     def get_damage(self, value: float):
         if(self._damage_delay <= 0):
@@ -52,8 +65,8 @@ class Enemy(object):
                 searching = False
         self._grid_position = [lin, col]
         for i in self._sprite:
-            self._sprite[i].x = col * tile_size
-            self._sprite[i].y = lin * tile_size
+            self._sprite[i].x = (col * tile_size) + (tile_size / 4)
+            self._sprite[i].y = lin * tile_size + (tile_size / 4)
 
     """Define qual IA de movimento o inimigo usará"""
     def move(self,map: list[list[Tile]], tile_size: int, player: Player):
@@ -65,7 +78,7 @@ class Enemy(object):
         else:
             # Movimentação dos Bosses
             pass
-    
+
     """IA de movimento dos inimigos menores/médios"""
     def move_small(self,map: list[list[Tile]], tile_size: int, player: Player):
         if(self.is_player_nearby(map, player, 3 * self._size)):
@@ -118,7 +131,7 @@ class Enemy(object):
                 self._move_direction = go
                 self._move_delay = self._delays["move"]
 
-    """Faz a animação com movimento do jogador"""
+    """Faz a animação de movimento do inimigo"""
     def move_animation(self, delta_time):
         if(self._state == "moving"):
             if(self._move_direction == "u"):
@@ -150,7 +163,7 @@ class Enemy(object):
                         self._sprite[i].x = self._destiny
                     self._state = "idle"
 
-    """Define se o inimigo pode se mover na direção especificada"""
+    """Retorna True se o inimigo pode se mover na direção especificada"""
     def can_move(self, map: list[list[Tile]], dir: str):
         if(self._move_delay > 0):
             return False
@@ -211,7 +224,7 @@ class Enemy(object):
     def draw(self, window):
         #self._sprite[self._state].update()
         pygame.draw.rect(window.screen, (255, 0, 0), 
-                         (self._sprite[self._state].x, self._sprite[self._state].y, self._sprite[self._state].width * (self._life / self._max_life), 5))
+                         (self._sprite[self._state].x, self._sprite[self._state].y - 7, self._sprite[self._state].width * (self._life / self._max_life), 3))
         self._sprite[self._state].draw()
 
 

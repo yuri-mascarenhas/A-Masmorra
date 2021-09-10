@@ -3,23 +3,31 @@ from tile import *
 
 class Player(object):
     #--------------------Atributos--------------------
+    _level: int
     _vel: int
-    _life: int
+    _max_life: int
+    _life: float
+    _exp: float
     _str: int
     _state: str
     _sprite: dict[Sprite]
     _weapon: Sprite
     _destiny: int
     _move_direction: str
+    _delays_clock: dict[float]             # lista de contadores dos delays
     _attack_delay: float                   # contador para o delay do ataque
+    _damage_delay: float                   # contador para o delay do dano recebido
     _move_delay: float                     # contador para o delay do movimento
     _delays: dict[float]                   # define o valor dos delays
     _grid_position: list[int]
 
     #--------------------Métodos--------------------
     def __init__(self):
+        self._level = 1
         self._vel = 100
-        self._life = 100
+        self._max_life = 3
+        self._life = self._max_life
+        self._exp = 0
         self._str = 15
         self._state = "idle"
         self._sprite = {"idle": Sprite("resources/player/knight_idle_right.png", 4),
@@ -28,9 +36,11 @@ class Player(object):
         for i in self._sprite:
             self._sprite[i].set_total_duration(500)
         self._move_delay = 0
+        self._damage_delay = 0
         self._attack_delay = 0
         self._delays = {"move": 0.5,
-                        "attack": 0.5}
+                        "attack": 0.5,
+                        "damage": 2.0}
         self._grid_position = [0, 0]
 
 
@@ -46,7 +56,7 @@ class Player(object):
         lin = 0
         while((lin < len(map)) and (not setted)):
             col = 0
-            while((lin < len(map[lin])) and (not setted)):
+            while((col < len(map[lin])) and (not setted)):
                 if(map[lin][col] != None):
                     setted = True
                     self.set_position(col * tile_size, (lin * tile_size) - (self._sprite[self._state].height - tile_size))
@@ -58,17 +68,41 @@ class Player(object):
     def get_sprite(self):
         return self._sprite[self._state]
     
+    """Retorna o atributo força"""
     def get_str(self):
         return self._str
 
+    def get_life(self):
+        return self._life
+
+    def get_max_life(self):
+        return self._max_life
+
+    def get_exp(self):
+        return self._exp
+
+    def get_level(self):
+        return self._level
+
+    """Diminui a vida do jogador"""
+    def get_damage(self, value: int):
+        if(self._damage_delay <= 0):
+            self._life -= value
+            self._damage_delay = self._delays["damage"]
+ 
     """Retorna a posição do player na matriz-mapa"""
     def get_grid_position(self):
         return self._grid_position
+
+    """Adiciona experiência ao jogador"""
+    def add_exp(self, value):
+        self._exp += value
 
     """Diminui o tempo de delay do movimento"""
     def decrease_all_delay(self, time: int):
         self._move_delay -= time
         self._attack_delay -= time
+        self._damage_delay -= time
 
     """Define o movimento do player"""
     def move(self, dir: str, tile_size: int):
@@ -171,9 +205,16 @@ class Player(object):
                 self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (30 * (self._delays["attack"] - self._attack_delay))
                 self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + self._weapon.height
 
-    """Retorna True se o player tiver"""
+    """Retorna True se o jogador tiver atacando"""
     def is_attacking(self):
         if(self._attack_delay > 0):
+            return True
+        else:
+            return False
+
+    """Retorna True se o jogador estiver invulnerável"""
+    def is_immortal(self):
+        if(self._damage_delay > 0):
             return True
         else:
             return False

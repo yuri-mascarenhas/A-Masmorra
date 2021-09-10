@@ -5,6 +5,7 @@ from tile import *
 from Map import *
 from Player import *
 from Enemy import *
+from UI import *
 import random
 
 window = Window(800, 600)
@@ -51,8 +52,10 @@ bg = Sprite("assets/bg.png")
 map = Map(800, 600, 48, 48, tiles, 3)
 player = Player()
 player.set_initial_position(map.get_layer(0), map.get_grid_size())
-enemy = Enemy("goblin", 1, 50)
-enemy.set_initial_position(map.get_layer(0), map.get_grid_size(), player)
+enemies = []
+enemies.append(Enemy("goblin", 1, 50))
+enemies[0].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
+ui = UI(window, player.get_max_life(), player.get_exp(), player.get_level())
 
 #---------------------Funções Auxiliares---------------------
 def move(key: str):
@@ -61,18 +64,35 @@ def move(key: str):
 
 def decrease_delays():
     player.decrease_all_delay(window.delta_time())
-    enemy.decrease_all_delay(window.delta_time())
+    for i in range(len(enemies)):
+        enemies[i].decrease_all_delay(window.delta_time())
 
 def animations():
     player.move_animation(window.delta_time())
     player.attack_animation(window.delta_time())
-    enemy.move_animation(window.delta_time())
+    for i in range(len(enemies)):
+        enemies[i].move_animation(window.delta_time())
 
 def damage_control():
-    if(player._weapon.collided(enemy.get_sprite()) and player.is_attacking()):
-        enemy.get_damage(player.get_str() + 5*(random.randint(0,1)))
+    for i in range(len(enemies)):
+        if(player._weapon.collided(enemies[i].get_sprite()) and player.is_attacking()):
+            enemies[i].get_damage(player.get_str() + 5*(random.randint(0,1)))
+        if(player.get_sprite().collided(enemies[i].get_sprite())):
+            player.get_damage(enemies[i].get_size() * 0.5)
+            ui.update_life_display(player, enemies[i].get_size() * 0.5)
+
+def draw_enemies():
+    for i in range(len(enemies)):
+        enemies[i].draw(window)
+
+def clear_enemies():
+    for i in range(len(enemies)):
+        if(enemies[i].get_life() <= 0):
+            player.add_exp((enemies[i].get_max_life() / 3) * enemies[i].get_size())
+            enemies.pop(i)
+
 #-------------------------Game Loop-------------------------
-while(not keyboard.key_pressed("ESC")):
+while((not keyboard.key_pressed("ESC")) and (player.get_life() > 0)):
     # Update do Player
     if(keyboard.key_pressed("W")):
         move("u")
@@ -85,9 +105,10 @@ while(not keyboard.key_pressed("ESC")):
     
     if(mouse.is_button_pressed(1)):
         player.attack()
-
     # Update dos inimigos
-    enemy.move(map.get_layer(0), map.get_grid_size(), player)
+    for i in range(len(enemies)):
+        enemies[i].move(map.get_layer(0), map.get_grid_size(), player)
+    clear_enemies()
 
     # Updates Unificados
     decrease_delays()
@@ -97,8 +118,8 @@ while(not keyboard.key_pressed("ESC")):
     # Draw dos Game Objects
     bg.draw()
     map.draw_layer(0)
-    map.draw_layer(2)
-    if(enemy._life > 0):
-        enemy.draw(window)
+    draw_enemies()
     player.draw()
+    map.draw_layer(2)
+    ui.draw()
     window.update()
