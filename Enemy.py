@@ -3,6 +3,11 @@ from tile import *
 from Player import *
 import random
 
+sprites_name = {"goblin": {"idle": ["resources/enemies/goblin/goblin_idle_left.png"],
+                           "moving": ["resources/enemies/goblin/goblin_run_left.png"]},
+                "zombie": {"idle": ["resources/enemies/tiny_zombie/tiny_zombie_idle_left.png"],
+                           "moving": ["resources/enemies/tiny_zombie/tiny_zombie_run_left.png"]}}
+
 class Enemy(object):
     #--------------------Atributos--------------------
     _vel: int
@@ -19,15 +24,17 @@ class Enemy(object):
     _grid_position: list[int]
 
     #--------------------Métodos--------------------
-    def __init__(self, type: str, size: int, life: int):
-        self._vel = 200
-        self._life = life
-        self._max_life = life
+    def __init__(self, type: str, size: int):
+        self._vel = 100 * size
+        self._life = 50 * size
+        self._max_life = self._life
         self._type = type
         self._size = size
         self._state = "idle"
-        self._sprite = {"idle": Sprite("resources/enemies/goblin/goblin_idle_anim_f0.png"), 
-                        "moving": Sprite("resources/enemies/goblin/goblin_run_anim_f3.png")}
+        self._sprite = {"idle": Sprite(sprites_name[type]["idle"][size - 1], 4), 
+                        "moving": Sprite(sprites_name[type]["moving"][size - 1], 4)}
+        for i in self._sprite:
+            self._sprite[i].set_total_duration(1000)
         self._damage_delay = 0
         self._move_delay = 0
         self._delays = {"move": 2, 
@@ -222,7 +229,7 @@ class Enemy(object):
 
     """Desenha o sprite do inimigo"""
     def draw(self, window):
-        #self._sprite[self._state].update()
+        self._sprite[self._state].update()
         pygame.draw.rect(window.screen, (255, 0, 0), 
                          (self._sprite[self._state].x, self._sprite[self._state].y - 7, self._sprite[self._state].width * (self._life / self._max_life), 3))
         self._sprite[self._state].draw()

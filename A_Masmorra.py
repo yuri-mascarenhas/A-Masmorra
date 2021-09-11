@@ -53,8 +53,7 @@ map = Map(800, 600, 48, 48, tiles, 3)
 player = Player()
 player.set_initial_position(map.get_layer(0), map.get_grid_size())
 enemies = []
-enemies.append(Enemy("goblin", 1, 50))
-enemies[0].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
+enemies_type = ["goblin", "zombie"]
 ui = UI(window, player.get_max_life(), player.get_exp(), player.get_level())
 
 #---------------------Funções Auxiliares---------------------
@@ -81,18 +80,36 @@ def damage_control():
             player.get_damage(enemies[i].get_size() * 0.5)
             ui.update_life_display(player, enemies[i].get_size() * 0.5)
 
-def draw_enemies():
+def level_control():
+    exp_to_next = (((player.get_level() - 1)**2) * 15) + 55
+    if(player.get_exp() >= exp_to_next):
+        player.level_up()
+        player.set_exp(0)
+        ui.level_up()
+        ui.set_exp(0)
+
+def enemies_draw():
     for i in range(len(enemies)):
         enemies[i].draw(window)
 
 def clear_enemies():
     for i in range(len(enemies)):
-        if(enemies[i].get_life() <= 0):
-            player.add_exp((enemies[i].get_max_life() / 3) * enemies[i].get_size())
-            enemies.pop(i)
+        if(i < len(enemies)):
+            if(enemies[i].get_life() <= 0):
+                gain = (enemies[i].get_max_life() / 3) * enemies[i].get_size()
+                player.add_exp(gain)
+                ui.add_exp(gain)
+                enemies.pop(i)
 
 #-------------------------Game Loop-------------------------
 while((not keyboard.key_pressed("ESC")) and (player.get_life() > 0)):
+    # Geração de inimigos para teste
+    if(len(enemies) == 0):
+        for i in range(3):
+            new_enemy = Enemy(enemies_type[random.randint(0,1)], 1)
+            enemies.append(new_enemy)
+            enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
+
     # Update do Player
     if(keyboard.key_pressed("W")):
         move("u")
@@ -114,11 +131,12 @@ while((not keyboard.key_pressed("ESC")) and (player.get_life() > 0)):
     decrease_delays()
     animations()
     damage_control()
+    level_control()
 
     # Draw dos Game Objects
     bg.draw()
     map.draw_layer(0)
-    draw_enemies()
+    enemies_draw()
     player.draw()
     map.draw_layer(2)
     ui.draw()

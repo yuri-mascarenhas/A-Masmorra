@@ -4,10 +4,10 @@ from tile import *
 class Player(object):
     #--------------------Atributos--------------------
     _level: int
+    _exp: float
     _vel: int
     _max_life: int
     _life: float
-    _exp: float
     _str: int
     _state: str
     _sprite: dict[Sprite]
@@ -21,13 +21,13 @@ class Player(object):
     _delays: dict[float]                   # define o valor dos delays
     _grid_position: list[int]
 
-    #--------------------Métodos--------------------
+    #---------------------Métodos---------------------
     def __init__(self):
         self._level = 1
+        self._exp = 0
         self._vel = 100
         self._max_life = 3
         self._life = self._max_life
-        self._exp = 0
         self._str = 15
         self._state = "idle"
         self._sprite = {"idle": Sprite("resources/player/knight_idle_right.png", 4),
@@ -40,7 +40,7 @@ class Player(object):
         self._attack_delay = 0
         self._delays = {"move": 0.5,
                         "attack": 0.5,
-                        "damage": 2.0}
+                        "damage": 1.0}
         self._grid_position = [0, 0]
 
 
@@ -94,9 +94,17 @@ class Player(object):
     def get_grid_position(self):
         return self._grid_position
 
-    """Adiciona experiência ao jogador"""
-    def add_exp(self, value):
+    """Adiciona um valor específico de experiência"""
+    def add_exp(self, value: float):
         self._exp += value
+
+    """Define um valor específico para experiência"""
+    def set_exp(self, value: float):
+        self._exp = value
+
+    """Aumenta o level em 1"""
+    def level_up(self):
+        self._level += 1
 
     """Diminui o tempo de delay do movimento"""
     def decrease_all_delay(self, time: int):
@@ -104,7 +112,7 @@ class Player(object):
         self._attack_delay -= time
         self._damage_delay -= time
 
-    """Define o movimento do player"""
+    """Define o movimento"""
     def move(self, dir: str, tile_size: int):
         if(dir == 'u'):
             self._destiny = self._sprite[self._state].y - tile_size
@@ -163,7 +171,7 @@ class Player(object):
             self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + self._weapon.height
             self._attack_delay = self._delays["attack"]
 
-    """Faz a animação com movimento do jogador"""
+    """Faz a animação do movimento"""
     def move_animation(self, delta_time):
         if(self._state == "moving"):
             if(self._move_direction == "u"):
@@ -195,7 +203,7 @@ class Player(object):
                         self._sprite[i].x = self._destiny
                     self._state = "idle"
 
-    """Faz a animação de ataque do jogador"""
+    """Faz a animação de ataque"""
     def attack_animation(self, delta_time):
         if(self._attack_delay > 0):
             if(self._attack_delay > (self._delays["attack"]/2)):
