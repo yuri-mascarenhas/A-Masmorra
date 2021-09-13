@@ -28,6 +28,9 @@
     <Compile Include="Map.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Menu.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Player.py">
       <SubType>Code</SubType>
     </Compile>

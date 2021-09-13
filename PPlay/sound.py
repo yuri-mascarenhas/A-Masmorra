@@ -3,7 +3,7 @@ import pygame.mixer
 
 # Initizalizes pygame's modules
 pygame.init()
-pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
+pygame.mixer.init(frequency=22050, size=-16, channels=8, buffer=512)
 """Sound é uma classe de controle dos sons do jogo - efeitos, música"""
 class Sound():
     """ATENÇÃO! O arquivo passado deve ser .OGG!!! Se não pode gerar problemas."""
@@ -59,6 +59,6 @@ class Sound():
         self.loop = repeat
 
     def fadeout(self, time_ms):
-        pygame.mixer.music.fadeout(time)
+        pygame.mixer.music.fadeout(time_ms)
 
 

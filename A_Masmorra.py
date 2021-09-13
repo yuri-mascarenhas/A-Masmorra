@@ -5,6 +5,7 @@ from tile import *
 from Map import *
 from Player import *
 from Enemy import *
+from Menu import *
 from UI import *
 import random
 
@@ -48,13 +49,17 @@ tiles = wall_tileset = Tileset([
     Tile("resources/tiles/wall/wall_top_right.png", 1, 2)
     ])
 
+state = "menu"
 bg = Sprite("assets/bg.png")
+main_menu = Menu()
+main_menu.organize(window, "main")
 map = Map(800, 600, 48, 48, tiles, 3)
 player = Player()
 player.set_initial_position(map.get_layer(0), map.get_grid_size())
 enemies = []
 enemies_type = ["goblin", "zombie"]
 ui = UI(window, player.get_max_life(), player.get_exp(), player.get_level())
+
 
 #---------------------Funções Auxiliares---------------------
 def move(key: str):
@@ -101,8 +106,10 @@ def clear_enemies():
                 ui.add_exp(gain)
                 enemies.pop(i)
 
-#-------------------------Game Loop-------------------------
-while((not keyboard.key_pressed("ESC")) and (player.get_life() > 0)):
+#-------------------------Game State-------------------------
+def play():
+    global state
+
     # Geração de inimigos para teste
     if(len(enemies) == 0):
         for i in range(3):
@@ -141,3 +148,27 @@ while((not keyboard.key_pressed("ESC")) and (player.get_life() > 0)):
     map.draw_layer(2)
     ui.draw()
     window.update()
+
+def menu():
+    global state
+
+    # Update dos Game Objects
+    for name in main_menu.get_buttons_name():
+        if(mouse.is_over_object(main_menu.get_button(name))):
+            main_menu.set_selected_over(name)
+            if(mouse.is_button_pressed(1)):
+                main_menu.play_selected()
+                state = name
+                
+    # Draw/play dos Game Objects
+    main_menu.play_bgm()
+    bg.draw()
+    main_menu.draw()
+    window.update()
+
+#-------------------------Game Loop-------------------------
+while(state != "exit"):
+    if(state == "menu"):
+        menu()
+    if(state == "play"):
+        play()
