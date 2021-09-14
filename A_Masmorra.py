@@ -7,6 +7,7 @@ from Player import *
 from Enemy import *
 from Menu import *
 from UI import *
+from Npc import *
 import random
 
 window = Window(800, 600)
@@ -50,11 +51,13 @@ tiles = wall_tileset = Tileset([
     ])
 
 state = "menu"
+map_level = 0
 bg = Sprite("assets/bg.png")
 main_menu = Menu()
 main_menu.organize(window, "main")
 map = Map(800, 600, 48, 48, tiles, 3)
 player = Player()
+wiz = Npc()
 player.set_initial_position(map.get_layer(0), map.get_grid_size())
 enemies = []
 enemies_type = ["goblin", "zombie"]
@@ -76,6 +79,8 @@ def animations():
     player.attack_animation(window.delta_time())
     for i in range(len(enemies)):
         enemies[i].move_animation(window.delta_time())
+    if(wiz.is_active()):
+        wiz.summon_animation(window.delta_time(), map.get_grid_size())
 
 def damage_control():
     for i in range(len(enemies)):
@@ -109,14 +114,19 @@ def clear_enemies():
 #-------------------------Game State-------------------------
 def play():
     global state
+    global map_level
 
     # Geração de inimigos para teste
-    if(len(enemies) == 0):
-        for i in range(3):
+    if(map_level == 0):
+        for i in range(2):
             new_enemy = Enemy(enemies_type[random.randint(0,1)], 1)
             enemies.append(new_enemy)
             enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
+            map_level += 1
 
+    if((len(enemies) == 0) and (not wiz.is_active())):
+        wiz.set_position(map.get_layer(0), map.get_grid_size(), player)
+        wiz.set_active()
     # Update do Player
     if(keyboard.key_pressed("W")):
         move("u")
@@ -126,9 +136,15 @@ def play():
         move("d")
     if(keyboard.key_pressed("D")):
         move("r")
-    
+
+    if((mouse.get_position()[0] < player.get_sprite().x) and (player.get_facing() == "right")):
+        player.flip_sprite()
+    if((mouse.get_position()[0] > player.get_sprite().x) and (player.get_facing() == "left")):
+        player.flip_sprite()
+
     if(mouse.is_button_pressed(1)):
         player.attack()
+
     # Update dos inimigos
     for i in range(len(enemies)):
         enemies[i].move(map.get_layer(0), map.get_grid_size(), player)
@@ -144,8 +160,13 @@ def play():
     bg.draw()
     map.draw_layer(0)
     enemies_draw()
-    player.draw()
-    map.draw_layer(2)
+    if(player.can_move(map.get_layer(0), 'u')):
+        player.draw()
+        map.draw_layer(2)
+    else:
+        map.draw_layer(2)
+        player.draw()
+    wiz.draw()
     ui.draw()
     window.update()
 

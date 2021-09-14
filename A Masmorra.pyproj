@@ -31,6 +31,9 @@
     <Compile Include="Menu.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Npc.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Player.py">
       <SubType>Code</SubType>
     </Compile>

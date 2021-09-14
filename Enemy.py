@@ -3,10 +3,15 @@ from tile import *
 from Player import *
 import random
 
-sprites_name = {"goblin": {"idle": ["resources/enemies/goblin/goblin_idle_left.png"],
-                           "moving": ["resources/enemies/goblin/goblin_run_left.png"]},
-                "zombie": {"idle": ["resources/enemies/tiny_zombie/tiny_zombie_idle_left.png"],
-                           "moving": ["resources/enemies/tiny_zombie/tiny_zombie_run_left.png"]}}
+sprites_name_left = {"goblin": {"idle": ["resources/enemies/goblin/goblin_idle_left.png"],
+                                "moving": ["resources/enemies/goblin/goblin_run_left.png"]},
+                     "zombie": {"idle": ["resources/enemies/tiny_zombie/tiny_zombie_idle_left.png"],
+                                "moving": ["resources/enemies/tiny_zombie/tiny_zombie_run_left.png"]}}
+
+sprites_name_right = {"goblin": {"idle": ["resources/enemies/goblin/goblin_idle_right.png"],
+                                "moving": ["resources/enemies/goblin/goblin_run_right.png"]},
+                     "zombie": {"idle": ["resources/enemies/tiny_zombie/tiny_zombie_idle_right.png"],
+                                "moving": ["resources/enemies/tiny_zombie/tiny_zombie_run_right.png"]}}
 
 class Enemy(object):
     #--------------------Atributos--------------------
@@ -16,6 +21,7 @@ class Enemy(object):
     _type: str
     _size: int
     _sprite: dict[Sprite]
+    _facing: str
     _state: str
     _destiny: int
     _move_direction: str
@@ -31,10 +37,11 @@ class Enemy(object):
         self._type = type
         self._size = size
         self._state = "idle"
-        self._sprite = {"idle": Sprite(sprites_name[type]["idle"][size - 1], 4), 
-                        "moving": Sprite(sprites_name[type]["moving"][size - 1], 4)}
+        self._facing = "left"
+        self._sprite = {"idle": Sprite(sprites_name_left[type]["idle"][size - 1], 4), 
+                        "moving": Sprite(sprites_name_left[type]["moving"][size - 1], 4)}
         for i in self._sprite:
-            self._sprite[i].set_total_duration(1000)
+            self._sprite[i].set_total_duration(700)
         self._damage_delay = 0
         self._move_delay = 0
         self._delays = {"move": 2, 
@@ -75,6 +82,27 @@ class Enemy(object):
             self._sprite[i].x = (col * tile_size) + (tile_size / 4)
             self._sprite[i].y = lin * tile_size + (tile_size / 4)
 
+    """Muda a direção do sprite"""
+    def flip_sprite(self):
+        if(self._facing == "left"):
+            new_sprite = {"idle": Sprite(sprites_name_right[self._type]["idle"][self._size - 1], 4), 
+                           "moving": Sprite(sprites_name_right[self._type]["moving"][self._size - 1], 4)}
+            for i in self._sprite:
+                new_sprite[i].set_total_duration(1000)
+                new_sprite[i].x = self._sprite[i].x
+                new_sprite[i].y = self._sprite[i].y
+            self._sprite = new_sprite
+            self._facing = "right"
+        else:
+            new_sprite = {"idle": Sprite(sprites_name_left[self._type]["idle"][self._size - 1], 4), 
+                           "moving": Sprite(sprites_name_left[self._type]["moving"][self._size - 1], 4)}
+            for i in self._sprite:
+                new_sprite[i].set_total_duration(1000)
+                new_sprite[i].x = self._sprite[i].x
+                new_sprite[i].y = self._sprite[i].y
+            self._sprite = new_sprite
+            self._facing = "left"
+
     """Define qual IA de movimento o inimigo usará"""
     def move(self,map: list[list[Tile]], tile_size: int, player: Player):
         if(self._size == 1):
@@ -98,6 +126,8 @@ class Enemy(object):
                     self._move_delay = self._delays["move"]
             elif(player.get_grid_position()[1] < self._grid_position[1]):
                 if(self.can_move(map, 'l')):
+                    if(self._facing == "right"):
+                        self.flip_sprite()
                     self._destiny = self._sprite[self._state].x - tile_size
                     self._grid_position[1] -= 1
                     self._state = "moving"
@@ -112,6 +142,8 @@ class Enemy(object):
                     self._move_delay = self._delays["move"]
             elif(player.get_grid_position()[1] > self._grid_position[1]):
                 if(self.can_move(map, 'r')):
+                    if(self._facing == "left"):
+                        self.flip_sprite()
                     self._destiny = self._sprite[self._state].x + tile_size
                     self._grid_position[1] += 1
                     self._state = "moving"
@@ -126,12 +158,16 @@ class Enemy(object):
                     self._destiny = self._sprite[self._state].y - tile_size
                     self._grid_position[0] -= 1
                 elif(go == 'l'):
+                    if(self._facing == "right"):
+                        self.flip_sprite()
                     self._destiny = self._sprite[self._state].x - tile_size
                     self._grid_position[1] -= 1
                 elif(go == 'd'):
                     self._destiny = self._sprite[self._state].y + tile_size
                     self._grid_position[0] += 1
                 else:
+                    if(self._facing == "left"):
+                        self.flip_sprite()
                     self._destiny = self._sprite[self._state].x + tile_size
                     self._grid_position[1] += 1
                 self._state = "moving"

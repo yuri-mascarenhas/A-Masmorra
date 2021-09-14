@@ -12,6 +12,7 @@ class Player(object):
     _state: str
     _sprite: dict[Sprite]
     _weapon: Sprite
+    _facing: str
     _destiny: int
     _move_direction: str
     _delays_clock: dict[float]             # lista de contadores dos delays
@@ -31,10 +32,11 @@ class Player(object):
         self._str = 15
         self._state = "idle"
         self._sprite = {"idle": Sprite("resources/player/knight_idle_right.png", 4),
-                        "moving": Sprite("resources/player/knight_run.png", 4)}
+                        "moving": Sprite("resources/player/knight_run_right.png", 4)}
         self._weapon = Sprite("resources/player/sword_right.png")
+        self._facing = "right"
         for i in self._sprite:
-            self._sprite[i].set_total_duration(500)
+            self._sprite[i].set_total_duration(700)
         self._move_delay = 0
         self._damage_delay = 0
         self._attack_delay = 0
@@ -83,6 +85,9 @@ class Player(object):
 
     def get_level(self):
         return self._level
+
+    def get_facing(self):
+        return self._facing
 
     """Diminui a vida do jogador"""
     def get_damage(self, value: int):
@@ -167,8 +172,11 @@ class Player(object):
     """Controla o ataque do jogador"""
     def attack(self):
         if(self._attack_delay <= 0):
-            self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2)
-            self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + self._weapon.height
+            if(self._facing == "right"):
+                self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2)
+            else:
+                self._weapon.x = self._sprite[self._state].x - (self._sprite[self._state].width / 2)
+            self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + (self._weapon.height / 2)
             self._attack_delay = self._delays["attack"]
 
     """Faz a animação do movimento"""
@@ -207,11 +215,17 @@ class Player(object):
     def attack_animation(self, delta_time):
         if(self._attack_delay > 0):
             if(self._attack_delay > (self._delays["attack"]/2)):
-                self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) + (30 * self._attack_delay)
-                self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + self._weapon.height
+                if(self._facing == "right"):
+                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) + (30 * self._attack_delay)
+                else:
+                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (self._weapon.width) - (30 * self._attack_delay)
+                self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + (self._weapon.height / 2)
             else:
-                self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (30 * (self._delays["attack"] - self._attack_delay))
-                self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + self._weapon.height
+                if(self._facing == "right"):
+                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (30 * (self._delays["attack"] - self._attack_delay))
+                else:
+                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (self._weapon.width) + (30 * (self._delays["attack"] - self._attack_delay))
+                self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + (self._weapon.height / 2)
 
     """Retorna True se o jogador tiver atacando"""
     def is_attacking(self):
@@ -226,6 +240,34 @@ class Player(object):
             return True
         else:
             return False
+
+    def flip_sprite(self):
+        if(self._facing == "right"):
+            new_sprite = {"idle": Sprite("resources/player/knight_idle_left.png", 4),
+                          "moving": Sprite("resources/player/knight_run_left.png", 4)}
+            new_weapon = Sprite("resources/player/sword_left.png")
+            new_weapon.x = self._weapon.x
+            new_weapon.y = self._weapon.y
+            for i in self._sprite:
+                new_sprite[i].set_total_duration(self._sprite[i].get_total_duration())
+                new_sprite[i].x = self._sprite[i].x
+                new_sprite[i].y = self._sprite[i].y
+            self._sprite = new_sprite
+            self._weapon = new_weapon
+            self._facing = "left"
+        else:
+            new_sprite = {"idle": Sprite("resources/player/knight_idle_right.png", 4),
+                          "moving": Sprite("resources/player/knight_run_right.png", 4)}
+            new_weapon = Sprite("resources/player/sword_right.png")
+            new_weapon.x = self._weapon.x
+            new_weapon.y = self._weapon.y
+            for i in self._sprite:
+                new_sprite[i].set_total_duration(self._sprite[i].get_total_duration())
+                new_sprite[i].x = self._sprite[i].x
+                new_sprite[i].y = self._sprite[i].y
+            self._sprite = new_sprite
+            self._weapon = new_weapon
+            self._facing = "right"
 
     """Desenha o sprite do jogador e sua arma"""
     def draw(self):
