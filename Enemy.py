@@ -116,7 +116,7 @@ class Enemy(object):
 
     """IA de movimento dos inimigos menores/médios"""
     def move_small(self,map: list[list[Tile]], tile_size: int, player: Player):
-        if(self.is_player_nearby(map, player, 3 * self._size)):
+        if(self.is_player_nearby(player, 3 * self._size)):
             if(player.get_grid_position()[0] < self._grid_position[0]):
                 if(self.can_move(map, 'u')):
                     self._destiny = self._sprite[self._state].y - tile_size
@@ -241,7 +241,7 @@ class Enemy(object):
                     return True
 
     """Retorna True se o player está numa distância r do inimigo"""
-    def is_player_nearby(self,map: list[list[Tile]], player: Player, radius: int):
+    def is_player_nearby(self, player: Player, radius: int):
         if((player.get_grid_position()[0] >= self._grid_position[0] - radius) and 
            (player.get_grid_position()[0] <= self._grid_position[0] + radius) and
            (player.get_grid_position()[1] >= self._grid_position[1] - radius) and

@@ -5,20 +5,20 @@ class Player(object):
     #--------------------Atributos--------------------
     _level: int
     _exp: float
+    _points: int
+    _str: int
+    _vit: int
+    _agi: int
     _vel: int
     _max_life: int
     _life: float
-    _str: int
     _state: str
     _sprite: dict[Sprite]
     _weapon: Sprite
     _facing: str
     _destiny: int
     _move_direction: str
-    _delays_clock: dict[float]             # lista de contadores dos delays
-    _attack_delay: float                   # contador para o delay do ataque
-    _damage_delay: float                   # contador para o delay do dano recebido
-    _move_delay: float                     # contador para o delay do movimento
+    _delay_clock: dict[float]             # lista de contadores dos delays
     _delays: dict[float]                   # define o valor dos delays
     _grid_position: list[int]
 
@@ -26,10 +26,13 @@ class Player(object):
     def __init__(self):
         self._level = 1
         self._exp = 0
+        self._points = 3
+        self._str = 5
+        self._vit = 3
+        self._agi = 1
         self._vel = 100
         self._max_life = 3
         self._life = self._max_life
-        self._str = 15
         self._state = "idle"
         self._sprite = {"idle": Sprite("resources/player/knight_idle_right.png", 4),
                         "moving": Sprite("resources/player/knight_run_right.png", 4)}
@@ -37,9 +40,9 @@ class Player(object):
         self._facing = "right"
         for i in self._sprite:
             self._sprite[i].set_total_duration(700)
-        self._move_delay = 0
-        self._damage_delay = 0
-        self._attack_delay = 0
+        self._delay_clock = {"move": 0,
+                             "attack": 0,
+                             "damage": 1}
         self._delays = {"move": 0.5,
                         "attack": 0.5,
                         "damage": 1.0}
@@ -74,6 +77,16 @@ class Player(object):
     def get_str(self):
         return self._str
 
+    def get_agi(self):
+        return self._agi
+
+    def get_vit(self):
+        return self._vit
+
+    def get_stats(self):
+        stats = {"str": self._str, "agi": self._agi, "vit": self._vit}
+        return stats
+
     def get_life(self):
         return self._life
 
@@ -89,11 +102,14 @@ class Player(object):
     def get_facing(self):
         return self._facing
 
+    def get_points(self):
+        return self._points
+
     """Diminui a vida do jogador"""
     def get_damage(self, value: int):
-        if(self._damage_delay <= 0):
+        if(self._delay_clock["damage"] <= 0):
             self._life -= value
-            self._damage_delay = self._delays["damage"]
+            self._delay_clock["damage"] = self._delays["damage"]
  
     """Retorna a posição do player na matriz-mapa"""
     def get_grid_position(self):
@@ -103,9 +119,25 @@ class Player(object):
     def add_exp(self, value: float):
         self._exp += value
 
+    def add_points(self, value):
+        self._points += value
+
+    def remove_point(self):
+        self._points -= 1
+
+    """Aumenta a vida de acordo com a poção e seu level"""
+    def use_potion(self, level: int):
+        self._life += 0.5 * level
+
     """Define um valor específico para experiência"""
     def set_exp(self, value: float):
         self._exp = value
+
+    """Define os valores especificados para os stats"""
+    def set_stats(self, str: int, agi: int, vit: int):
+        self._str = str
+        self._agi = agi
+        self._vit = vit
 
     """Aumenta o level em 1"""
     def level_up(self):
@@ -113,9 +145,8 @@ class Player(object):
 
     """Diminui o tempo de delay do movimento"""
     def decrease_all_delay(self, time: int):
-        self._move_delay -= time
-        self._attack_delay -= time
-        self._damage_delay -= time
+        for i in self._delay_clock:
+            self._delay_clock[i] -= time
 
     """Define o movimento"""
     def move(self, dir: str, tile_size: int):
@@ -133,11 +164,11 @@ class Player(object):
             self._grid_position[1] += 1
         self._state = "moving"
         self._move_direction = dir
-        self._move_delay = self._delays["move"]
+        self._delay_clock["move"] = self._delays["move"]
     
     """Define se o player pode se mover na direção especificada"""
     def can_move(self, map: list[list[Tile]], dir: str):
-        if(self._move_delay > 0):
+        if(self._delay_clock["move"] > 0):
             return False
         else:
             if(dir == 'u'):
@@ -169,15 +200,15 @@ class Player(object):
                 else:
                     return True
 
-    """Controla o ataque do jogador"""
+    """Controla o ataque"""
     def attack(self):
-        if(self._attack_delay <= 0):
+        if(self._delay_clock["attack"] <= 0):
             if(self._facing == "right"):
                 self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2)
             else:
                 self._weapon.x = self._sprite[self._state].x - (self._sprite[self._state].width / 2)
             self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + (self._weapon.height / 2)
-            self._attack_delay = self._delays["attack"]
+            self._delay_clock["attack"] = self._delays["attack"]
 
     """Faz a animação do movimento"""
     def move_animation(self, delta_time):
@@ -213,34 +244,35 @@ class Player(object):
 
     """Faz a animação de ataque"""
     def attack_animation(self, delta_time):
-        if(self._attack_delay > 0):
-            if(self._attack_delay > (self._delays["attack"]/2)):
+        if(self._delay_clock["attack"] > 0):
+            if(self._delay_clock["attack"] > (self._delays["attack"]/2)):
                 if(self._facing == "right"):
-                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) + (30 * self._attack_delay)
+                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) + (30 * self._delay_clock["attack"])
                 else:
-                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (self._weapon.width) - (30 * self._attack_delay)
+                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (self._weapon.width) - (30 * self._delay_clock["attack"])
                 self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + (self._weapon.height / 2)
             else:
                 if(self._facing == "right"):
-                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (30 * (self._delays["attack"] - self._attack_delay))
+                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (30 * (self._delays["attack"] - self._delay_clock["attack"]))
                 else:
-                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (self._weapon.width) + (30 * (self._delays["attack"] - self._attack_delay))
+                    self._weapon.x = self._sprite[self._state].x + (self._sprite[self._state].width / 2) - (self._weapon.width) + (30 * (self._delays["attack"] - self._delay_clock["attack"]))
                 self._weapon.y = self._sprite[self._state].y + (self._sprite[self._state].height / 2) + (self._weapon.height / 2)
 
     """Retorna True se o jogador tiver atacando"""
     def is_attacking(self):
-        if(self._attack_delay > 0):
+        if(self._delay_clock["attack"] > 0):
             return True
         else:
             return False
 
     """Retorna True se o jogador estiver invulnerável"""
     def is_immortal(self):
-        if(self._damage_delay > 0):
+        if(self._delay_clock["damage"] > 0):
             return True
         else:
             return False
 
+    """Muda a direção/facing"""
     def flip_sprite(self):
         if(self._facing == "right"):
             new_sprite = {"idle": Sprite("resources/player/knight_idle_left.png", 4),
@@ -273,7 +305,7 @@ class Player(object):
     def draw(self):
         self._sprite[self._state].update()
         self._sprite[self._state].draw()
-        if(self._attack_delay > 0):
+        if(self._delay_clock["attack"] > 0):
             self._weapon.draw()
 
     

@@ -53,10 +53,11 @@ tiles = wall_tileset = Tileset([
 state = "menu"
 map_level = 0
 bg = Sprite("assets/bg.png")
-main_menu = Menu()
-main_menu.organize(window, "main")
-map = Map(800, 600, 48, 48, tiles, 3)
 player = Player()
+main_menu = Menu(window, "main")
+stats_menu = Menu(window, "stats")
+stats_menu.set_stats(player.get_str(), player.get_agi(), player.get_vit())
+map = Map(800, 600, 48, 48, tiles, 3)
 wiz = Npc()
 player.set_initial_position(map.get_layer(0), map.get_grid_size())
 enemies = []
@@ -71,6 +72,7 @@ def move(key: str):
 
 def decrease_delays():
     player.decrease_all_delay(window.delta_time())
+    ui.decrease_all_delay(window.delta_time())
     for i in range(len(enemies)):
         enemies[i].decrease_all_delay(window.delta_time())
 
@@ -88,12 +90,13 @@ def damage_control():
             enemies[i].get_damage(player.get_str() + 5*(random.randint(0,1)))
         if(player.get_sprite().collided(enemies[i].get_sprite())):
             player.get_damage(enemies[i].get_size() * 0.5)
-            ui.update_life_display(player, enemies[i].get_size() * 0.5)
+            ui.update_life_display("damage", player, enemies[i].get_size() * 0.5)
 
 def level_control():
     exp_to_next = (((player.get_level() - 1)**2) * 15) + 55
     if(player.get_exp() >= exp_to_next):
         player.level_up()
+        player.add_points(1)
         player.set_exp(0)
         ui.level_up()
         ui.set_exp(0)
@@ -111,14 +114,56 @@ def clear_enemies():
                 ui.add_exp(gain)
                 enemies.pop(i)
 
-#-------------------------Game State-------------------------
+def npc_interaction():
+    if(wiz.is_player_nearby(player, 1)):
+        if(keyboard.key_pressed("E")):
+            if(wiz.get_potions() > 0):
+                if(ui.can_buy()):
+                    ui.add_potion()
+                    wiz.remove_potion()
+
+def npc_dialogue():
+    if(wiz.is_player_nearby(player, 1)):
+        if(wiz.get_potions() > 0):
+            window.draw_text("você pode comprar " + str(wiz.get_potions()) + " poções", wiz.get_sprite().x - 56, wiz.get_sprite().y - 42, size=14, color=(255,255,255), font_name="Arial", bold=False, italic=False)
+            window.draw_text("pressione E para comprar", wiz.get_sprite().x - 56, wiz.get_sprite().y - 28, size=14, color=(255,255,255), font_name="Arial", bold=False, italic=True)
+            window.draw_text("pressione F para ir para próxima fase", wiz.get_sprite().x - 56, wiz.get_sprite().y - 14, size=14, color=(255,255,255), font_name="Arial", bold=False, italic=True)
+        else:
+            window.draw_text("não há mais poções para compra", wiz.get_sprite().x - 56, wiz.get_sprite().y - 28, size=14, color=(255,255,255), font_name="Arial", bold=False, italic=False)
+            window.draw_text("pressione F para ir para próxima fase", wiz.get_sprite().x - 56, wiz.get_sprite().y - 14, size=14, color=(255,255,255), font_name="Arial", bold=False, italic=True)
+
+def show_stats():
+    window.draw_text(str(stats_menu.get_str()), stats_menu.get_text("str").x + stats_menu.get_text("str").width + 20 , stats_menu.get_text("str").y - 5 , size=40, color=(255,100,100), font_name="Arial", bold=False, italic=True)
+    window.draw_text(str(stats_menu.get_agi()), stats_menu.get_text("agi").x + stats_menu.get_text("agi").width + 20 , stats_menu.get_text("agi").y - 5 , size=40, color=(255,100,100), font_name="Arial", bold=False, italic=True)
+    window.draw_text(str(stats_menu.get_vit()), stats_menu.get_text("vit").x + stats_menu.get_text("vit").width + 20 , stats_menu.get_text("vit").y - 5 , size=40, color=(255,100,100), font_name="Arial", bold=False, italic=True)
+
+def change_stats_temp():
+    for name in stats_menu.get_sub_buttons_name():
+        if(mouse.is_over_object(stats_menu.get_sub_button(name)["plus"])):
+            if(mouse.is_button_pressed(1)):
+                if((not stats_menu.is_sub_pressed(name, "plus")) and (player.get_points() > 0)):
+                    stats_menu.add_stat(name, 1)
+                    player.remove_point()
+                stats_menu.set_sub_state(name, "plus", True)
+            else:
+                stats_menu.set_sub_state(name, "plus", False)
+        elif(mouse.is_over_object(stats_menu.get_sub_button(name)["minus"])):
+            if(mouse.is_button_pressed(1)):
+                if((not stats_menu.is_sub_pressed(name, "minus")) and (stats_menu.get_stat(name) != player.get_stats()[name])):
+                    stats_menu.add_stat(name, -1)
+                    player.add_points(1)
+                stats_menu.set_sub_state(name, "minus", True)
+            else:
+                stats_menu.set_sub_state(name, "minus", False)
+
+#-------------------------Game States-------------------------
 def play():
     global state
     global map_level
 
-    # Geração de inimigos para teste
+    # Summon dos inimigos e da NPC
     if(map_level == 0):
-        for i in range(2):
+        for i in range(1):
             new_enemy = Enemy(enemies_type[random.randint(0,1)], 1)
             enemies.append(new_enemy)
             enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
@@ -127,6 +172,7 @@ def play():
     if((len(enemies) == 0) and (not wiz.is_active())):
         wiz.set_position(map.get_layer(0), map.get_grid_size(), player)
         wiz.set_active()
+
     # Update do Player
     if(keyboard.key_pressed("W")):
         move("u")
@@ -145,6 +191,12 @@ def play():
     if(mouse.is_button_pressed(1)):
         player.attack()
 
+    if(keyboard.key_pressed("SPACE")):
+        if(ui.can_use_potion()):
+            ui.use_potion()
+            player.use_potion(ui.get_potion_level())
+            ui.update_life_display("heal", player, ui.get_potion_level())
+
     # Update dos inimigos
     for i in range(len(enemies)):
         enemies[i].move(map.get_layer(0), map.get_grid_size(), player)
@@ -155,6 +207,7 @@ def play():
     animations()
     damage_control()
     level_control()
+    npc_interaction()
 
     # Draw dos Game Objects
     bg.draw()
@@ -167,6 +220,7 @@ def play():
         map.draw_layer(2)
         player.draw()
     wiz.draw()
+    npc_dialogue()
     ui.draw()
     window.update()
 
@@ -187,9 +241,40 @@ def menu():
     main_menu.draw()
     window.update()
 
+def stats():
+    global state
+
+    # Update dos Game Objects
+    for name in stats_menu.get_buttons_name():
+        if(mouse.is_over_object(stats_menu.get_button(name))):
+            stats_menu.set_selected_over(name)
+            if(mouse.is_button_pressed(1)):
+                stats_menu.play_selected()
+                if(name == "back"):
+                    unconfirmed_pts = 0
+                    for i in stats_menu.get_stats():
+                        if(stats_menu.get_stat(i) != player.get_stats()[i]):
+                            unconfirmed_pts += abs(stats_menu.get_stat(i) - player.get_stats()[i])
+                    player.add_points(unconfirmed_pts)
+                    stats_menu.set_stats(player.get_str(), player.get_agi(), player.get_vit())
+                    state = "menu"
+                if(name == "confirm"):
+                    player.set_stats(stats_menu.get_stat("str"), stats_menu.get_stat("agi"), stats_menu.get_stat("vit"))
+    change_stats_temp()
+    
+    # Draw/play dos Game Objects
+    stats_menu.play_bgm()
+    bg.draw()
+    stats_menu.draw()
+    show_stats()
+    window.draw_text("PTS: " + str(player.get_points()), stats_menu.get_button("confirm").x + 48, stats_menu.get_button("confirm").y - 24 , size=24, color=(100,255,100), font_name="Arial", bold=True, italic=False)
+    window.update()
+
 #-------------------------Game Loop-------------------------
 while(state != "exit"):
     if(state == "menu"):
         menu()
     if(state == "play"):
         play()
+    if(state == "stats"):
+        stats()
