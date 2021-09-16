@@ -156,6 +156,7 @@ class Menu(object):
             self._music.fadeout(500)
             self._music = Sound(self._sounds["selected"])
             self._music.play()
+            self._music.fadeout(3000)
 
     def draw(self):
         if(self._type == "main"):

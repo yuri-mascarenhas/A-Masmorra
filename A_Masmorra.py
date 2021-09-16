@@ -1,6 +1,7 @@
 from PPlay.window import *
 from PPlay.gameimage import *
 from PPlay.sprite import *
+from PPlay.sound import *
 from tile import *
 from Map import *
 from Player import *
@@ -64,6 +65,7 @@ state = "menu"
 map_level = 1
 level_started = False
 bg = Sprite("assets/bg.png")
+music = Sound("resources/music/play_theme.ogg")
 player = Player()
 main_menu = Menu(window, "main")
 stats_menu = Menu(window, "stats")
@@ -72,6 +74,7 @@ map = Map(800, 600, 48, 48, tiles, 3)
 wiz = Npc()
 enemies = []
 enemies_type = ["goblin", "zombie"]
+start_delay = 4
 
 
 #---------------------Funções Auxiliares---------------------
@@ -177,8 +180,6 @@ def summon_enemies():
         new_enemy = Enemy(enemies_type[random.randint(0,1)], 1)
         enemies.append(new_enemy)
         enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
-    print(len(enemies))
-    print(enemies[0]._grid_position)
 
 
 #-------------------------Game States-------------------------
@@ -187,19 +188,24 @@ def play():
     global map_level
     global level_started
     global enemies
+    global music
+    global start_delay
 
     # Inicialização
-    if(not level_started):
-        
+    if(not music.is_playing()):
+        music = Sound("resources/music/play_theme.ogg")
+        music.set_volume(15)
+        music.play()
+    if(not level_started):     
         if(map_level <= 10):
             index = random.randint(0, len(small_maps) - 1)
             map.load_map(small_maps[index])
         else:
             index = random.randint(0, len(big_maps) - 1)
-            map.load_map(big_maps[index])
-        
+            map.load_map(big_maps[index])  
         player.set_initial_position(map.get_layer(0), map.get_grid_size())
         summon_enemies()
+        start_delay = 4
         map_level += 1
         level_started = True
 
@@ -208,49 +214,53 @@ def play():
         wiz.set_position(map.get_layer(0), map.get_grid_size(), player)
         wiz.set_active()
 
-    # Update do Player
-    if(keyboard.key_pressed("W")):
-        move("u")
-    elif(keyboard.key_pressed("A")):
-        move("l")
-    elif(keyboard.key_pressed("S")):
-        move("d")
-    elif(keyboard.key_pressed("D")):
-        move("r")
+    if(start_delay > 0):
+        start_delay -= window.delta_time()
+    else:
+        # Update do Player
+        if(keyboard.key_pressed("W")):
+            move("u")
+        elif(keyboard.key_pressed("A")):
+            move("l")
+        elif(keyboard.key_pressed("S")):
+            move("d")
+        elif(keyboard.key_pressed("D")):
+            move("r")
 
-    if((mouse.get_position()[0] < player.get_sprite().x) and (player.get_facing() == "right")):
-        player.flip_sprite()
-    if((mouse.get_position()[0] > player.get_sprite().x) and (player.get_facing() == "left")):
-        player.flip_sprite()
+        if((mouse.get_position()[0] < player.get_sprite().x) and (player.get_facing() == "right")):
+            player.flip_sprite()
+        if((mouse.get_position()[0] > player.get_sprite().x) and (player.get_facing() == "left")):
+            player.flip_sprite()
 
-    if(mouse.is_button_pressed(1)):
-        player.attack()
+        if(mouse.is_button_pressed(1)):
+            player.attack()
 
-    if(keyboard.key_pressed("SPACE")):
-        if(ui.can_use_potion()):
-            ui.use_potion()
-            player.use_potion(ui.get_potion_level())
-            ui.update_life_display("heal", player, ui.get_potion_level())
+        if(keyboard.key_pressed("SPACE")):
+            if(ui.can_use_potion()):
+                ui.use_potion()
+                player.use_potion(ui.get_potion_level())
+                ui.update_life_display("heal", player, ui.get_potion_level())
 
-    # Updates Unificados
-    decrease_delays()
-    animations()
-    damage_control()
-    level_control()
-    npc_interaction()
+        # Updates Unificados
+        decrease_delays()
+        animations()
+        damage_control()
+        level_control()
+        npc_interaction()
 
-    # Update dos inimigos
-    for i in range(len(enemies)):
-        enemies[i].move(map.get_layer(0), map.get_grid_size(), player)
-    clear_enemies()
+        # Update dos inimigos
+        for i in range(len(enemies)):
+            enemies[i].move(map.get_layer(0), map.get_grid_size(), player)
+        clear_enemies()
 
-    # Checkando game state
-    if(player.get_life() <= 0):
-        player.set_grid_position(0,0)
-        map_level = 1
-        level_started = False
-        enemies = []
-        state = "menu"
+        # Checkando game state
+        if(player.get_life() <= 0):
+            player.set_grid_position(0,0)
+            map_level = 1
+            level_started = False
+            enemies = []
+            music.fadeout(2000)
+            state = "menu"
 
     # Draw dos Game Objects
     bg.draw()
@@ -265,6 +275,8 @@ def play():
     wiz.draw()
     npc_dialogue()
     ui.draw()
+    if(start_delay > 0):
+        window.draw_text(str(int(start_delay)), (window.width / 2) - 25 , (window.height / 2) - 25, size=50, color=(255,255,255), font_name="Arial", bold=True, italic=False)
     window.update()
 
 def menu():

@@ -27,7 +27,7 @@ class Player(object):
     def __init__(self):
         self._level = 1
         self._exp = 0
-        self._points = 100
+        self._points = 1
         self._str = 5
         self._vit = 3
         self._agi = 1
@@ -146,6 +146,7 @@ class Player(object):
         self._str = str
         self._agi = agi
         self._delays["move"] = 1.24 - 0.60 * math.log((0.21 * self._agi) + 1.27) 
+        self._vel = 67.04 * math.log((2.11 * self._agi) + 3.41) - 14.69 
         self._vit = vit
         self._max_life = vit // 3
 
