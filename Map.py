@@ -21,7 +21,7 @@ class Map(object):
     _default_tile: str
 
     #--------------------Métodos--------------------
-    def __init__(self, size_x: int, size_y: int, grid_x: int, grid_y: int, tile_set: Tileset, layers: int = 1, default_background: str = "resources/background/default.png", default_tile: str ="resources/null.png ", file_name: str = "resources/maps/map1.txt"):
+    def __init__(self, size_x: int, size_y: int, grid_x: int, grid_y: int, tile_set: Tileset, layers: int = 1, file_name: str = "resources/maps/map_small_square.txt", default_background: str = "resources/background/default.png", default_tile: str ="resources/null.png "):
         self.columns = ceil(size_x / grid_x)
         self.lines = ceil(size_y / grid_y)
         self.layers = layers
@@ -37,6 +37,8 @@ class Map(object):
  
     """Importa o mapa do arquivo especificado"""
     def load_map(self, file_name: str):
+        self._map = []
+        self._map_loader = []
         file = open(file_name, 'r')
         for z in range(self.layers):
             self._map_loader.append([])

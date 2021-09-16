@@ -57,6 +57,9 @@ class UI(object):
     def add_exp(self, value: float):
         self.exp += value
 
+    def set_potion(self, value: int):
+        self.potion = value
+
     def add_potion(self):
         self.potion += 1
         self.potion_sprite.append(Sprite("resources/ui/potion_200.png"))
@@ -65,9 +68,10 @@ class UI(object):
         self.delay_clock["buy"] = self.delays["buy"]
 
     def use_potion(self):
-        self.potion -= 1
-        self.potion_sprite.pop()
-        self.delay_clock["potion"] = self.delays["potion"]
+        if(self.potion > 0):
+            self.potion -= 1
+            self.potion_sprite.pop()
+            self.delay_clock["potion"] = self.delays["potion"]
 
     def can_use_potion(self):
         if(self.delay_clock["potion"] <= 0):

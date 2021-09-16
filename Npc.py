@@ -48,7 +48,10 @@ class Npc(object):
 
     def summon_animation(self, delta_time: float, tile_size: int):
         if(self._sprite.y < self._grid_position[0] * tile_size - (self._sprite.height - tile_size)):
-            self._sprite.move_y(100 * delta_time)
+            self._sprite.move_y(200 * delta_time)
+
+    def unsummon(self):
+        self._sprite.y = -self._sprite.height
 
     def is_player_nearby(self, player: Player, radius: int):
         if((player.get_grid_position()[0] >= self._grid_position[0] - radius) and 

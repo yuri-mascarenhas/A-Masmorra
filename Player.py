@@ -1,5 +1,6 @@
 from PPlay.sprite import *
 from tile import *
+import math
 
 class Player(object):
     #--------------------Atributos--------------------
@@ -18,7 +19,7 @@ class Player(object):
     _facing: str
     _destiny: int
     _move_direction: str
-    _delay_clock: dict[float]             # lista de contadores dos delays
+    _delay_clock: dict[float]              # lista de contadores dos delays
     _delays: dict[float]                   # define o valor dos delays
     _grid_position: list[int]
 
@@ -26,12 +27,12 @@ class Player(object):
     def __init__(self):
         self._level = 1
         self._exp = 0
-        self._points = 3
+        self._points = 100
         self._str = 5
         self._vit = 3
         self._agi = 1
         self._vel = 100
-        self._max_life = 3
+        self._max_life = self._vit // 3
         self._life = self._max_life
         self._state = "idle"
         self._sprite = {"idle": Sprite("resources/player/knight_idle_right.png", 4),
@@ -43,7 +44,7 @@ class Player(object):
         self._delay_clock = {"move": 0,
                              "attack": 0,
                              "damage": 1}
-        self._delays = {"move": 0.5,
+        self._delays = {"move": 1.0,
                         "attack": 0.5,
                         "damage": 1.0}
         self._grid_position = [0, 0]
@@ -54,6 +55,10 @@ class Player(object):
         for i in self._sprite:
             self._sprite[i].x = x
             self._sprite[i].y = y
+
+    """Define a posição no grid"""
+    def set_grid_position(self, lin: int, col: int):
+        self._grid_position = [lin, col]
 
     """Define a posição inicial do Player"""
     def set_initial_position(self, map: list[list[Tile]], tile_size):
@@ -125,6 +130,9 @@ class Player(object):
     def remove_point(self):
         self._points -= 1
 
+    def set_life(self, value: float):
+        self._life = value
+
     """Aumenta a vida de acordo com a poção e seu level"""
     def use_potion(self, level: int):
         self._life += 0.5 * level
@@ -133,11 +141,13 @@ class Player(object):
     def set_exp(self, value: float):
         self._exp = value
 
-    """Define os valores especificados para os stats"""
+    """Define os valores especificados para os stats e o que eles alteram"""
     def set_stats(self, str: int, agi: int, vit: int):
         self._str = str
         self._agi = agi
+        self._delays["move"] = 1.24 - 0.60 * math.log((0.21 * self._agi) + 1.27) 
         self._vit = vit
+        self._max_life = vit // 3
 
     """Aumenta o level em 1"""
     def level_up(self):
@@ -168,7 +178,7 @@ class Player(object):
     
     """Define se o player pode se mover na direção especificada"""
     def can_move(self, map: list[list[Tile]], dir: str):
-        if(self._delay_clock["move"] > 0):
+        if(self._delay_clock["move"] > 0 or self._state == "moving"):
             return False
         else:
             if(dir == 'u'):

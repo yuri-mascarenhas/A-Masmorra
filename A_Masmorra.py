@@ -15,7 +15,7 @@ keyboard = Window.get_keyboard()
 mouse = Window.get_mouse()
 window.set_title("A Masmorra")
 
-tiles = wall_tileset = Tileset([
+tiles = Tileset([
     Tile("resources/tiles/floor/floor_1.png", 1, 0),
     Tile("resources/tiles/floor/floor_2.png", 1, 0),
     Tile("resources/tiles/floor/floor_3.png", 1, 0),
@@ -49,9 +49,20 @@ tiles = wall_tileset = Tileset([
     Tile("resources/tiles/wall/wall_top_mid.png", 1, 2),
     Tile("resources/tiles/wall/wall_top_right.png", 1, 2)
     ])
+small_maps = ["resources/maps/map_small_u_shape.txt",
+              "resources/maps/map_small_trident.txt", 
+              "resources/maps/map_small_square.txt",
+              "resources/maps/map_small_random_shape.txt",
+              "resources/maps/map_small_h_shape.txt"]
+big_maps = ["resources/maps/map_big_random_shape.txt",
+            "resources/maps/map_big_square.txt",
+            "resources/maps/map_big_u_shape.txt",
+            "resources/maps/map_medium_t_shape.txt",
+            "resources/maps/map_mediun_l_shape.txt"]
 
 state = "menu"
-map_level = 0
+map_level = 1
+level_started = False
 bg = Sprite("assets/bg.png")
 player = Player()
 main_menu = Menu(window, "main")
@@ -59,10 +70,8 @@ stats_menu = Menu(window, "stats")
 stats_menu.set_stats(player.get_str(), player.get_agi(), player.get_vit())
 map = Map(800, 600, 48, 48, tiles, 3)
 wiz = Npc()
-player.set_initial_position(map.get_layer(0), map.get_grid_size())
 enemies = []
 enemies_type = ["goblin", "zombie"]
-ui = UI(window, player.get_max_life(), player.get_exp(), player.get_level())
 
 
 #---------------------Funções Auxiliares---------------------
@@ -87,7 +96,7 @@ def animations():
 def damage_control():
     for i in range(len(enemies)):
         if(player._weapon.collided(enemies[i].get_sprite()) and player.is_attacking()):
-            enemies[i].get_damage(player.get_str() + 5*(random.randint(0,1)))
+            enemies[i].get_damage(5 * player.get_str())
         if(player.get_sprite().collided(enemies[i].get_sprite())):
             player.get_damage(enemies[i].get_size() * 0.5)
             ui.update_life_display("damage", player, enemies[i].get_size() * 0.5)
@@ -115,12 +124,18 @@ def clear_enemies():
                 enemies.pop(i)
 
 def npc_interaction():
+    global map_level
+    global level_started
     if(wiz.is_player_nearby(player, 1)):
         if(keyboard.key_pressed("E")):
             if(wiz.get_potions() > 0):
                 if(ui.can_buy()):
                     ui.add_potion()
                     wiz.remove_potion()
+        if(keyboard.key_pressed("F") and (wiz.is_active())):
+            wiz.unsummon()
+            wiz.set_active(False)
+            level_started = False
 
 def npc_dialogue():
     if(wiz.is_player_nearby(player, 1)):
@@ -156,31 +171,51 @@ def change_stats_temp():
             else:
                 stats_menu.set_sub_state(name, "minus", False)
 
+def summon_enemies():
+    global enemies
+    for i in range(map_level):
+        new_enemy = Enemy(enemies_type[random.randint(0,1)], 1)
+        enemies.append(new_enemy)
+        enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
+    print(len(enemies))
+    print(enemies[0]._grid_position)
+
+
 #-------------------------Game States-------------------------
 def play():
     global state
     global map_level
+    global level_started
+    global enemies
 
-    # Summon dos inimigos e da NPC
-    if(map_level == 0):
-        for i in range(1):
-            new_enemy = Enemy(enemies_type[random.randint(0,1)], 1)
-            enemies.append(new_enemy)
-            enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
-            map_level += 1
+    # Inicialização
+    if(not level_started):
+        
+        if(map_level <= 10):
+            index = random.randint(0, len(small_maps) - 1)
+            map.load_map(small_maps[index])
+        else:
+            index = random.randint(0, len(big_maps) - 1)
+            map.load_map(big_maps[index])
+        
+        player.set_initial_position(map.get_layer(0), map.get_grid_size())
+        summon_enemies()
+        map_level += 1
+        level_started = True
 
-    if((len(enemies) == 0) and (not wiz.is_active())):
+    # Summon do NPC     
+    if((len(enemies) == 0) and (not wiz.is_active()) and (map_level > 1)):
         wiz.set_position(map.get_layer(0), map.get_grid_size(), player)
         wiz.set_active()
 
     # Update do Player
     if(keyboard.key_pressed("W")):
         move("u")
-    if(keyboard.key_pressed("A")):
+    elif(keyboard.key_pressed("A")):
         move("l")
-    if(keyboard.key_pressed("S")):
+    elif(keyboard.key_pressed("S")):
         move("d")
-    if(keyboard.key_pressed("D")):
+    elif(keyboard.key_pressed("D")):
         move("r")
 
     if((mouse.get_position()[0] < player.get_sprite().x) and (player.get_facing() == "right")):
@@ -197,17 +232,25 @@ def play():
             player.use_potion(ui.get_potion_level())
             ui.update_life_display("heal", player, ui.get_potion_level())
 
-    # Update dos inimigos
-    for i in range(len(enemies)):
-        enemies[i].move(map.get_layer(0), map.get_grid_size(), player)
-    clear_enemies()
-
     # Updates Unificados
     decrease_delays()
     animations()
     damage_control()
     level_control()
     npc_interaction()
+
+    # Update dos inimigos
+    for i in range(len(enemies)):
+        enemies[i].move(map.get_layer(0), map.get_grid_size(), player)
+    clear_enemies()
+
+    # Checkando game state
+    if(player.get_life() <= 0):
+        player.set_grid_position(0,0)
+        map_level = 1
+        level_started = False
+        enemies = []
+        state = "menu"
 
     # Draw dos Game Objects
     bg.draw()
@@ -226,7 +269,7 @@ def play():
 
 def menu():
     global state
-
+    global ui
     # Update dos Game Objects
     for name in main_menu.get_buttons_name():
         if(mouse.is_over_object(main_menu.get_button(name))):
@@ -234,6 +277,10 @@ def menu():
             if(mouse.is_button_pressed(1)):
                 main_menu.play_selected()
                 state = name
+                if(name == "play"):
+                    player.set_life(player.get_max_life())
+                    ui = UI(window, player.get_max_life(), player.get_exp(), player.get_level())
+
                 
     # Draw/play dos Game Objects
     main_menu.play_bgm()
