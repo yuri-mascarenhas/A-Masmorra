@@ -241,7 +241,7 @@ def play():
         if(keyboard.key_pressed("SPACE")):
             if(ui.can_use_potion()):
                 ui.use_potion()
-                player.use_potion(ui.get_potion_level())
+                player.use_potion((map_level // 5) + 1)
                 ui.update_life_display("heal", player, ui.get_potion_level())
 
         # Updates Unificados
