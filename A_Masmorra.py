@@ -132,7 +132,10 @@ def npc_interaction():
     if(wiz.is_player_nearby(player, 1)):
         if(keyboard.key_pressed("E")):
             if(wiz.get_potions() > 0):
-                if(ui.can_buy()):
+                price = ((((player.get_level() - 1)**2) * 15) + 55) / 2
+                if(ui.can_buy() and player.get_exp() >= price):
+                    ui.add_exp(-price)
+                    player.add_exp(-price)
                     ui.add_potion()
                     wiz.remove_potion()
         if(keyboard.key_pressed("F") and (wiz.is_active())):
@@ -259,6 +262,7 @@ def play():
             map_level = 1
             level_started = False
             enemies = []
+            npc.reset_potions()
             music.fadeout(2000)
             state = "menu"
 

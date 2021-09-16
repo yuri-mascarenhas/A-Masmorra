@@ -36,6 +36,9 @@ class Npc(object):
     def remove_potion(self):
         self._potions -= 1
 
+    def reset_potions(self):
+        self._potions = 3
+
     def set_position(self, map: list[list[Tile]], tile_size, player: Player):
         searching = True
         while(searching):
