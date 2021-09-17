@@ -3,15 +3,19 @@ from tile import *
 from Player import *
 import random
 
-sprites_name_left = {"goblin": {"idle": ["resources/enemies/goblin/goblin_idle_left.png"],
-                                "moving": ["resources/enemies/goblin/goblin_run_left.png"]},
-                     "zombie": {"idle": ["resources/enemies/tiny_zombie/tiny_zombie_idle_left.png"],
-                                "moving": ["resources/enemies/tiny_zombie/tiny_zombie_run_left.png"]}}
+sprites_name_left = {"goblin": {"idle": ["resources/enemies/goblin/goblin_idle_left.png", "resources/enemies/orc_warrior/orc_warrior_idle_left.png", "resources/enemies/ogre/ogre_idle_left.png"],
+                                "moving": ["resources/enemies/goblin/goblin_run_left.png", "resources/enemies/orc_warrior/orc_warrior_run_left.png", "resources/enemies/ogre/ogre_run_left.png"]},
+                     "zombie": {"idle": ["resources/enemies/tiny_zombie/tiny_zombie_idle_left.png", "resources/enemies/zombie/zombie_idle_left.png", "resources/enemies/big_zombie/big_zombie_idle_left.png"],
+                                "moving": ["resources/enemies/tiny_zombie/tiny_zombie_run_left.png", "resources/enemies/zombie/zombie_run_left.png", "resources/enemies/big_zombie/big_zombie_run_left.png"]},
+                     "demon": {"idle": ["resources/enemies/imp/imp_idle_left.png", "resources/enemies/chort/chort_idle_left.png", "resources/enemies/big_demon/big_demon_idle_left.png"],
+                               "moving": ["resources/enemies/imp/imp_run_left.png", "resources/enemies/chort/chort_run_left.png", "resources/enemies/big_demon/big_demon_run_left.png"]}}
 
-sprites_name_right = {"goblin": {"idle": ["resources/enemies/goblin/goblin_idle_right.png"],
-                                "moving": ["resources/enemies/goblin/goblin_run_right.png"]},
-                     "zombie": {"idle": ["resources/enemies/tiny_zombie/tiny_zombie_idle_right.png"],
-                                "moving": ["resources/enemies/tiny_zombie/tiny_zombie_run_right.png"]}}
+sprites_name_right = {"goblin": {"idle": ["resources/enemies/goblin/goblin_idle_right.png", "resources/enemies/orc_warrior/orc_warrior_idle_right.png", "resources/enemies/ogre/ogre_idle_right.png"],
+                                "moving": ["resources/enemies/goblin/goblin_run_right.png", "resources/enemies/orc_warrior/orc_warrior_run_right.png", "resources/enemies/ogre/ogre_run_right.png"]},
+                     "zombie": {"idle": ["resources/enemies/tiny_zombie/tiny_zombie_idle_right.png", "resources/enemies/zombie/zombie_idle_right.png", "resources/enemies/big_zombie/big_zombie_idle_right.png"],
+                                "moving": ["resources/enemies/tiny_zombie/tiny_zombie_run_right.png", "resources/enemies/zombie/zombie_run_right.png", "resources/enemies/big_zombie/big_zombie_run_right.png"]},
+                     "demon": {"idle": ["resources/enemies/imp/imp_idle_right.png", "resources/enemies/chort/chort_idle_right.png", "resources/enemies/big_demon/big_demon_idle_right.png"],
+                                "moving": ["resources/enemies/imp/imp_run_right.png", "resources/enemies/chort/chort_run_right.png", "resources/enemies/big_demon/big_demon_run_right.png"]}}
 
 class Enemy(object):
     #--------------------Atributos--------------------
@@ -31,7 +35,12 @@ class Enemy(object):
 
     #--------------------Métodos--------------------
     def __init__(self, type: str, size: int):
-        self._vel = 100 * size
+        self._vel = 100
+        if(size < 3):
+            if(type == "zombie"):
+                self._vel *= 0.75
+            elif(type == "demon"):
+                self._vel *= 2
         self._life = 50 * size
         self._max_life = self._life
         self._type = type
@@ -69,6 +78,15 @@ class Enemy(object):
             self._life -= value
             self._damage_delay = self._delays["damage"]
 
+    """Define o dano que o inimigo causa ao jogador"""
+    def do_damage(self):
+        if(self._type == "goblin"):
+            return self._size * 1.5
+        elif(self._type == "demon"):
+            return self._size
+        else:
+            return self._size * 0.5
+
     """Define a posição x,y do inimigo"""
     def set_initial_position(self, map: list[list[Tile]], tile_size: int, player: Player):
         searching = True
@@ -79,8 +97,9 @@ class Enemy(object):
                 searching = False
         self._grid_position = [lin, col]
         for i in self._sprite:
-            self._sprite[i].x = (col * tile_size) + (tile_size / 4)
-            self._sprite[i].y = lin * tile_size + (tile_size / 4)
+            self._sprite[i].x = col * tile_size + (tile_size / 4)
+            #self._sprite[i].y = lin * tile_size + (tile_size / 4)
+            self._sprite[i].y = lin * tile_size - (self._sprite[self._state].height - tile_size) 
 
     """Muda a direção do sprite"""
     def flip_sprite(self):
@@ -105,11 +124,8 @@ class Enemy(object):
 
     """Define qual IA de movimento o inimigo usará"""
     def move(self,map: list[list[Tile]], tile_size: int, player: Player):
-        if(self._size == 1):
+        if(self._size <= 2):
             self.move_small(map, tile_size, player)
-        elif(self._size == 2):
-            # Movimentação dos inimigos médios
-            pass
         else:
             # Movimentação dos Bosses
             pass

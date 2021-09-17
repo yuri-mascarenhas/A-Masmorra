@@ -73,7 +73,7 @@ stats_menu.set_stats(player.get_str(), player.get_agi(), player.get_vit())
 map = Map(800, 600, 48, 48, tiles, 3)
 wiz = Npc()
 enemies = []
-enemies_type = ["goblin", "zombie"]
+enemies_type = ["goblin", "zombie", "demon"]
 start_delay = 4
 
 
@@ -101,7 +101,7 @@ def damage_control():
         if(player._weapon.collided(enemies[i].get_sprite()) and player.is_attacking()):
             enemies[i].get_damage(5 * player.get_str())
         if(player.get_sprite().collided(enemies[i].get_sprite())):
-            player.get_damage(enemies[i].get_size() * 0.5)
+            player.get_damage(enemies[i].do_damage())
             ui.update_life_display("damage", player, enemies[i].get_size() * 0.5)
 
 def level_control():
@@ -180,10 +180,18 @@ def change_stats_temp():
 def summon_enemies():
     global enemies
     for i in range(map_level):
-        new_enemy = Enemy(enemies_type[random.randint(0,1)], 1)
-        enemies.append(new_enemy)
-        enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
-
+        if(map_level < 10):
+            new_enemy = Enemy(enemies_type[random.randint(0,2)], 1)
+            enemies.append(new_enemy)
+            enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
+        elif(map_level < 20):
+            new_enemy = Enemy(enemies_type[random.randint(0,2)], random.randint(1,2))
+            enemies.append(new_enemy)
+            enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
+        else:
+            new_enemy = Enemy(enemies_type[random.randint(0,2)], random.randint(1,3))
+            enemies.append(new_enemy)
+            enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
 
 #-------------------------Game States-------------------------
 def play():
@@ -200,7 +208,7 @@ def play():
         music.set_volume(15)
         music.play()
     if(not level_started):     
-        if(map_level <= 10):
+        if(map_level < 10):
             index = random.randint(0, len(small_maps) - 1)
             map.load_map(small_maps[index])
         else:
@@ -262,7 +270,7 @@ def play():
             map_level = 1
             level_started = False
             enemies = []
-            npc.reset_potions()
+            wiz.reset_potions()
             music.fadeout(2000)
             state = "menu"
 
