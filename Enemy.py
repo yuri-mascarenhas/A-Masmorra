@@ -47,14 +47,25 @@ class Enemy(object):
         self._size = size
         self._state = "idle"
         self._facing = "left"
-        self._sprite = {"idle": Sprite(sprites_name_left[type]["idle"][size - 1], 4), 
-                        "moving": Sprite(sprites_name_left[type]["moving"][size - 1], 4)}
+        self._sprite = {
+            "idle": {
+                "right": Sprite(sprites_name_right[type]["idle"][size - 1], 4),
+                "left": Sprite(sprites_name_left[type]["idle"][size - 1], 4)
+            },
+            "moving": {
+                "right": Sprite(sprites_name_right[type]["moving"][size - 1], 4),
+                "left": Sprite(sprites_name_left[type]["moving"][size - 1], 4)
+            }
+        }
         for i in self._sprite:
-            self._sprite[i].set_total_duration(700)
+            for key in self._sprite[i]:
+                self._sprite[i][key].set_total_duration(700)
         self._damage_delay = 0
         self._move_delay = 0
+        self._attack_delay = 0
         self._delays = {"move": 2, 
-                        "damage": 1}
+                        "damage": 0.5,
+                        "attack": 1}
 
     """Retorna a vida atual do inimigo"""
     def get_life(self):
@@ -66,7 +77,7 @@ class Enemy(object):
 
     """Retorna o sprite do estado atual"""
     def get_sprite(self):
-        return self._sprite[self._state]
+        return self._sprite[self._state][self._facing]
     
     """Retorna o tamanho/tipo do inimigo"""
     def get_size(self):
@@ -97,94 +108,85 @@ class Enemy(object):
                 searching = False
         self._grid_position = [lin, col]
         for i in self._sprite:
-            self._sprite[i].x = col * tile_size + (tile_size / 4)
-            #self._sprite[i].y = lin * tile_size + (tile_size / 4)
-            self._sprite[i].y = lin * tile_size - (self._sprite[self._state].height - tile_size) 
+            for key in self._sprite[i]:
+                self._sprite[i][key].x = col * tile_size + (tile_size / 4)
+                #self._sprite[i].y = lin * tile_size + (tile_size / 4)
+                self._sprite[i][key].y = lin * tile_size - (self._sprite[self._state][self._facing].height - tile_size) 
 
-    """Muda a direção do sprite"""
-    def flip_sprite(self):
-        if(self._facing == "left"):
-            new_sprite = {"idle": Sprite(sprites_name_right[self._type]["idle"][self._size - 1], 4), 
-                           "moving": Sprite(sprites_name_right[self._type]["moving"][self._size - 1], 4)}
-            for i in self._sprite:
-                new_sprite[i].set_total_duration(1000)
-                new_sprite[i].x = self._sprite[i].x
-                new_sprite[i].y = self._sprite[i].y
-            self._sprite = new_sprite
-            self._facing = "right"
+    def is_player_in_front(self, player: Player):
+        if(player.get_grid_position()[0] == self._grid_position[0] and player.get_grid_position()[1] == self._grid_position[1] + 1):
+            return "l"
+        elif(player.get_grid_position()[0] == self._grid_position[0] and player.get_grid_position()[1] == self._grid_position[1] - 1):
+            return "r"
+        elif(player.get_grid_position()[0] == self._grid_position[0] + 1 and player.get_grid_position()[1] == self._grid_position[1]):
+            return "d"
+        elif(player.get_grid_position()[0] == self._grid_position[0] - 1 and player.get_grid_position()[1] == self._grid_position[1]):
+            return "u"
         else:
-            new_sprite = {"idle": Sprite(sprites_name_left[self._type]["idle"][self._size - 1], 4), 
-                           "moving": Sprite(sprites_name_left[self._type]["moving"][self._size - 1], 4)}
-            for i in self._sprite:
-                new_sprite[i].set_total_duration(1000)
-                new_sprite[i].x = self._sprite[i].x
-                new_sprite[i].y = self._sprite[i].y
-            self._sprite = new_sprite
-            self._facing = "left"
+            return False
 
     """Define qual IA de movimento o inimigo usará"""
     def move(self,map: list[list[Tile]], tile_size: int, player: Player):
         if(self._size <= 2):
             self.move_small(map, tile_size, player)
         else:
-            # Movimentação dos Bosses
-            pass
+            self.move_small(map, tile_size, player)
 
     """IA de movimento dos inimigos menores/médios"""
-    def move_small(self,map: list[list[Tile]], tile_size: int, player: Player):
+    def move_small(self, map: list[list[Tile]], tile_size: int, player: Player):
+        player_grid = player.get_grid_position()
         if(self.is_player_nearby(player, 3 * self._size)):
-            if(player.get_grid_position()[0] < self._grid_position[0]):
-                if(self.can_move(map, 'u')):
-                    self._destiny = self._sprite[self._state].y - tile_size
-                    self._grid_position[0] -= 1
-                    self._state = "moving"
-                    self._move_direction = 'u'
-                    self._move_delay = self._delays["move"]
-            elif(player.get_grid_position()[1] < self._grid_position[1]):
-                if(self.can_move(map, 'l')):
-                    if(self._facing == "right"):
-                        self.flip_sprite()
-                    self._destiny = self._sprite[self._state].x - tile_size
-                    self._grid_position[1] -= 1
-                    self._state = "moving"
-                    self._move_direction = 'l'
-                    self._move_delay = self._delays["move"]
-            elif(player.get_grid_position()[0] > self._grid_position[0]):
-                if(self.can_move(map, 'd')):
-                    self._destiny = self._sprite[self._state].y + tile_size
-                    self._grid_position[0] += 1
-                    self._state = "moving"
-                    self._move_direction = 'd'
-                    self._move_delay = self._delays["move"]
-            elif(player.get_grid_position()[1] > self._grid_position[1]):
-                if(self.can_move(map, 'r')):
-                    if(self._facing == "left"):
-                        self.flip_sprite()
-                    self._destiny = self._sprite[self._state].x + tile_size
-                    self._grid_position[1] += 1
-                    self._state = "moving"
-                    self._move_direction = 'r'
-                    self._move_delay = self._delays["move"]
+            if not self.is_player_in_front(player):
+                if(player_grid[0] < self._grid_position[0]):
+                    if(self.can_move(map, 'u')):
+                        self._destiny = self._sprite[self._state][self._facing].y - tile_size
+                        self._grid_position[0] -= 1
+                        self._state = "moving"
+                        self._move_direction = 'u'
+                        self._move_delay = self._delays["move"]
+                elif(player_grid[1] < self._grid_position[1]):
+                    if(self.can_move(map, 'l')):
+                        self._destiny = self._sprite[self._state][self._facing].x - tile_size
+                        self._grid_position[1] -= 1
+                        self._state = "moving"
+                        self._move_direction = 'l'
+                        self._move_delay = self._delays["move"]
+                elif(player_grid[0] > self._grid_position[0]):
+                    if(self.can_move(map, 'd')):
+                        self._destiny = self._sprite[self._state][self._facing].y + tile_size
+                        self._grid_position[0] += 1
+                        self._state = "moving"
+                        self._move_direction = 'd'
+                        self._move_delay = self._delays["move"]
+                elif(player_grid[1] > self._grid_position[1]):
+                    if(self.can_move(map, 'r')):
+                        self._destiny = self._sprite[self._state][self._facing].x + tile_size
+                        self._grid_position[1] += 1
+                        self._state = "moving"
+                        self._move_direction = 'r'
+                        self._move_delay = self._delays["move"]
+                if(player_grid[1] > self._grid_position[1]): self._facing = "right"
+                else: self._facing = "left"
         else:
             directions = ['u', 'l', 'd', 'r']
             searching = True
             go = directions[random.randint(0,3)]
             if(self.can_move(map, go)):
                 if(go == 'u'):
-                    self._destiny = self._sprite[self._state].y - tile_size
+                    self._destiny = self._sprite[self._state][self._facing].y - tile_size
                     self._grid_position[0] -= 1
                 elif(go == 'l'):
                     if(self._facing == "right"):
-                        self.flip_sprite()
-                    self._destiny = self._sprite[self._state].x - tile_size
+                        self._facing = "left"
+                    self._destiny = self._sprite[self._state][self._facing].x - tile_size
                     self._grid_position[1] -= 1
                 elif(go == 'd'):
-                    self._destiny = self._sprite[self._state].y + tile_size
+                    self._destiny = self._sprite[self._state][self._facing].y + tile_size
                     self._grid_position[0] += 1
                 else:
                     if(self._facing == "left"):
-                        self.flip_sprite()
-                    self._destiny = self._sprite[self._state].x + tile_size
+                        self._facing = "right"
+                    self._destiny = self._sprite[self._state][self._facing].x + tile_size
                     self._grid_position[1] += 1
                 self._state = "moving"
                 self._move_direction = go
@@ -194,32 +196,44 @@ class Enemy(object):
     def move_animation(self, delta_time):
         if(self._state == "moving"):
             if(self._move_direction == "u"):
-                if(self._sprite[self._state].y > self._destiny):
-                    self._sprite[self._state].move_y(-self._vel * delta_time)
+                if(self._sprite[self._state][self._facing].y > self._destiny):
+                    for i in self._sprite:
+                        for key in self._sprite[i]:
+                            self._sprite[i][key].move_y(-self._vel * delta_time)
                 else:
                     for i in self._sprite:
-                        self._sprite[i].y = self._destiny
+                        for key in self._sprite[i]:
+                            self._sprite[i][key].y = self._destiny
                     self._state = "idle"
             elif(self._move_direction == "l"):
-                if(self._sprite[self._state].x > self._destiny):
-                    self._sprite[self._state].move_x(-self._vel * delta_time)
+                if(self._sprite[self._state][self._facing].x > self._destiny):
+                    for i in self._sprite:
+                        for key in self._sprite[i]:
+                            self._sprite[i][key].move_x(-self._vel * delta_time)
                 else:
                     for i in self._sprite:
-                        self._sprite[i].x = self._destiny
+                        for key in self._sprite[i]:
+                            self._sprite[i][key].x = self._destiny
                     self._state = "idle"
-            if(self._move_direction == "d"):
-                if(self._sprite[self._state].y < self._destiny):
-                    self._sprite[self._state].move_y(self._vel * delta_time)
+            elif(self._move_direction == "d"):
+                if(self._sprite[self._state][self._facing].y < self._destiny):
+                    for i in self._sprite:
+                        for key in self._sprite[i]:
+                            self._sprite[i][key].move_y(self._vel * delta_time)
                 else:
                     for i in self._sprite:
-                        self._sprite[i].y = self._destiny
+                        for key in self._sprite[i]:
+                            self._sprite[i][key].y = self._destiny
                     self._state = "idle"
-            if(self._move_direction == "r"):
-                if(self._sprite[self._state].x < self._destiny):
-                    self._sprite[self._state].move_x(self._vel * delta_time)
+            elif(self._move_direction == "r"):
+                if(self._sprite[self._state][self._facing].x < self._destiny):
+                    for i in self._sprite:
+                        for key in self._sprite[i]:
+                            self._sprite[i][key].move_x(self._vel * delta_time)
                 else:
                     for i in self._sprite:
-                        self._sprite[i].x = self._destiny
+                        for key in self._sprite[i]:
+                            self._sprite[i][key].x = self._destiny
                     self._state = "idle"
 
     """Retorna True se o inimigo pode se mover na direção especificada"""
@@ -256,6 +270,12 @@ class Enemy(object):
                 else:
                     return True
 
+    def can_hit(self, player: Player):
+        if(self._attack_delay < 0) and self.is_player_in_front(player) and player._state == "idle":
+            return True
+        else:
+            return False
+                
     """Retorna True se o player está numa distância r do inimigo"""
     def is_player_nearby(self, player: Player, radius: int):
         if((player.get_grid_position()[0] >= self._grid_position[0] - radius) and 
@@ -269,7 +289,7 @@ class Enemy(object):
     """Diminui o tempo de delay do movimento"""
     def decrease_move_delay(self, time: int):
         self._move_delay -= time
-    
+
     """Diminui o tempo de delay do dano recebido"""
     def decrease_damage_delay(self, time: int):
         self._damage_delay -= time
@@ -278,12 +298,11 @@ class Enemy(object):
     def decrease_all_delay(self, time: int):
         self._move_delay -= time
         self._damage_delay -= time
+        self._attack_delay -= time
 
     """Desenha o sprite do inimigo"""
     def draw(self, window):
-        self._sprite[self._state].update()
+        self._sprite[self._state][self._facing].update()
         pygame.draw.rect(window.screen, (255, 0, 0), 
-                         (self._sprite[self._state].x, self._sprite[self._state].y - 7, self._sprite[self._state].width * (self._life / self._max_life), 3))
-        self._sprite[self._state].draw()
-
-
+                         (self._sprite[self._state][self._facing].x, self._sprite[self._state][self._facing].y - 7, self._sprite[self._state][self._facing].width * (self._life / self._max_life), 3))
+        self._sprite[self._state][self._facing].draw()

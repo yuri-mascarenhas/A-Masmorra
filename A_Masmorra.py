@@ -10,6 +10,7 @@ from Menu import *
 from UI import *
 from Npc import *
 import random
+from datetime import datetime
 
 window = Window(800, 600)
 keyboard = Window.get_keyboard()
@@ -98,11 +99,12 @@ def animations():
 
 def damage_control():
     for i in range(len(enemies)):
-        if(player._weapon.collided(enemies[i].get_sprite()) and player.is_attacking()):
+        if(player._weapon[player.get_facing()].collided(enemies[i].get_sprite()) and player.is_attacking()):
             enemies[i].get_damage(5 * player.get_str())
-        if(player.get_sprite().collided(enemies[i].get_sprite())):
-            player.get_damage(enemies[i].do_damage())
+        if enemies[i].can_hit(player):
+            player.get_damage(enemies[i].get_size() * 0.5)
             ui.update_life_display("damage", player, enemies[i].get_size() * 0.5)
+            enemies[i]._attack_delay = enemies[i]._delays["attack"]
 
 def level_control():
     exp_to_next = (((player.get_level() - 1)**2) * 15) + 55
@@ -153,10 +155,21 @@ def npc_dialogue():
             window.draw_text("não há mais poções para compra", wiz.get_sprite().x - 56, wiz.get_sprite().y - 28, size=14, color=(255,255,255), font_name="Arial", bold=False, italic=False)
             window.draw_text("pressione F para ir para próxima fase", wiz.get_sprite().x - 56, wiz.get_sprite().y - 14, size=14, color=(255,255,255), font_name="Arial", bold=False, italic=True)
 
-def show_stats():
-    window.draw_text(str(stats_menu.get_str()), stats_menu.get_text("str").x + stats_menu.get_text("str").width + 20 , stats_menu.get_text("str").y - 5 , size=40, color=(255,100,100), font_name="Arial", bold=False, italic=True)
-    window.draw_text(str(stats_menu.get_agi()), stats_menu.get_text("agi").x + stats_menu.get_text("agi").width + 20 , stats_menu.get_text("agi").y - 5 , size=40, color=(255,100,100), font_name="Arial", bold=False, italic=True)
-    window.draw_text(str(stats_menu.get_vit()), stats_menu.get_text("vit").x + stats_menu.get_text("vit").width + 20 , stats_menu.get_text("vit").y - 5 , size=40, color=(255,100,100), font_name="Arial", bold=False, italic=True)
+def show_stats(): 
+    window.draw_text(str(stats_menu._stats["str"]), stats_menu.get_text("str").x + stats_menu.get_text("str").width + 20 , stats_menu.get_text("str").y - 5 , size=40, color=(255,100,100), font_name="Arial", bold=False, italic=True)
+    window.draw_text(str(stats_menu._stats["agi"]), stats_menu.get_text("agi").x + stats_menu.get_text("agi").width + 20 , stats_menu.get_text("agi").y - 5 , size=40, color=(255,100,100), font_name="Arial", bold=False, italic=True)
+    window.draw_text(str(stats_menu._stats["vit"]), stats_menu.get_text("vit").x + stats_menu.get_text("vit").width + 20 , stats_menu.get_text("vit").y - 5 , size=40, color=(255,100,100), font_name="Arial", bold=False, italic=True)
+
+def show_rank():
+    lines = []
+    with open("rank") as f:
+        lines = f.readlines()
+
+    i = 1
+    for line in lines:
+        if(i == 10): break
+        window.draw_text(line[:len(line) - 1], window.width/2 - 100, 100 + i * 35 , size=20, color=(255,255,255), font_name="Arial", bold=False)
+        i += 1
 
 def change_stats_temp():
     for name in stats_menu.get_sub_buttons_name():
@@ -192,6 +205,11 @@ def summon_enemies():
             new_enemy = Enemy(enemies_type[random.randint(0,2)], random.randint(1,3))
             enemies.append(new_enemy)
             enemies[i].set_initial_position(map.get_layer(0), map.get_grid_size(), player)
+
+def update_rank():
+    with open('rank', 'r') as original: data = original.read()
+    now = datetime.now()
+    with open('rank', 'w') as modified: modified.write(now.strftime("%d/%m/%Y %H:%M:%S") + f" - {map_level} Level" + "\n" + data)
 
 #-------------------------Game States-------------------------
 def play():
@@ -239,9 +257,9 @@ def play():
             move("r")
 
         if((mouse.get_position()[0] < player.get_sprite().x) and (player.get_facing() == "right")):
-            player.flip_sprite()
+            player.set_facing("left")
         if((mouse.get_position()[0] > player.get_sprite().x) and (player.get_facing() == "left")):
-            player.flip_sprite()
+            player.set_facing("right")
 
         if(mouse.is_button_pressed(1)):
             player.attack()
@@ -272,6 +290,7 @@ def play():
             enemies = []
             wiz.reset_potions()
             music.fadeout(2000)
+            update_rank()
             state = "menu"
 
     # Draw dos Game Objects
@@ -341,6 +360,17 @@ def stats():
     window.draw_text("PTS: " + str(player.get_points()), stats_menu.get_button("confirm").x + 48, stats_menu.get_button("confirm").y - 24 , size=24, color=(100,255,100), font_name="Arial", bold=True, italic=False)
     window.update()
 
+def rank():
+    global state
+    
+    back_button = Sprite("resources/menu/button_back.png")
+    back_button.x = window.width/2 - back_button.width/2
+    back_button.y = window.height - 100
+
+    bg.draw()
+    back_button.draw()
+    show_rank()
+    window.update()
 #-------------------------Game Loop-------------------------
 while(state != "exit"):
     if(state == "menu"):
@@ -349,3 +379,5 @@ while(state != "exit"):
         play()
     if(state == "stats"):
         stats()
+    if(state == "rank"):
+        rank()
